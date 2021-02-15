@@ -1,17 +1,16 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeSynonymInstances #-}
+module Tableau where
 
-module FOL.Tableau where
-
-import FOL.Search
-import FOL.CNF
-import FOL.Unification
+import CNF
 import Control.Applicative
 import Data.Tree
+import Unification
 import Data.Maybe
 import Control.Arrow (second)
+import Search
 
-type Tableau = (Int, [Branch]) -- (freeVars, openBranches)  loss of sharing possible. (we have to refute all the branches)
+type Tableau = (Int, [Branch]) -- (freeVars,openBranches)  loss of sharing possible. (we have to refute all the branches)
 type Branch = [SimpleTerm] -- interpreted as a conjunction (which we have to refute)
 
 -- | All pairs in a list
@@ -34,12 +33,14 @@ branchClosingMGUs = catMaybes . map unifyTop . pairs
 ---------------------------------------------------
 -- Tableau queries
 
+
 finished :: Tableau -> Bool
 finished = null . snd
 
 -- | All the MGU able to close any branch
 possibleMGUs :: Tableau -> [Substitution]
 possibleMGUs (_, bs) = concatMap branchClosingMGUs bs
+
 
 ------------------------------
 -- Tableau combinators
@@ -85,7 +86,7 @@ refuteSimpleD cs@(c:cs') t
    =   do deeper $ refuteSimpleD cs' -- keep going using the rest of the clauses
                    (extendUsingClause c t) -- try the 1st clause
   <|>  do mgu <- choose (possibleMGUs t) -- see if we can close any branch
-          (mgu:) <$> refuteSimpleD cs (filterClosed $ applySubstTabl mgu t) -- go ahead
+          (mgu:) <$> refuteSimpleD cs (filterClosed $ applyS mgu t) -- go ahead
 
 
 refute :: Int -> [Clause] -> Maybe [Substitution]
@@ -97,10 +98,12 @@ refute d cs = listToMaybe $
 -------------------------------------
 --  "Incomplete" utilities.
 
+
 -- | Close the 1st branch using the 1st mgu.
 close1 :: Tableau -> Tableau
-close1 (fv, b:bs) = filterClosed $ applySubstTabl mgu (fv, b:bs)
+close1 (fv, b:bs) = filterClosed $ applyS mgu (fv, b:bs)
     where (mgu:_) = branchClosingMGUs b
+
 
 rotateBranches :: Tableau -> Tableau
 rotateBranches (t, bs) = (t, rotate bs)

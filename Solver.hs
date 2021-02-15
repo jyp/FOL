@@ -1,9 +1,12 @@
 module FOL.Solver where
 
-import FOL.Regularity
+import FOL.Connection
 import FOL.FOL
 import FOL.CNF
 import FOL.Unification
+
+prepare :: Foldable t => t Value -> [Clause]
+prepare  = toCNF . doQuote . foldr1 VAnd
 
 solver :: Foldable t => Int -> t Value -> Maybe [Substitution]
 solver maxSteps input = refute maxSteps (xs !! 0) xs

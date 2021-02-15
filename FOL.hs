@@ -5,8 +5,7 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE FlexibleInstances #-}
-
-module FOL.FOL where
+module FOL where
 
 import Text.PrettyPrint.HughesPJ hiding ((<>))
 

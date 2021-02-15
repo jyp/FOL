@@ -1,28 +1,27 @@
 module Exercise1 where
 
-import FOL.Tableau
-import FOL.CNF
--- import FOL.Unification
--- import FOL.Text.Groom
-import FOL.FOL
-import FOL.Regularity
-import FOL.Connection
-import FOL.Solver
+import Tableau
+import CNF
+import Unification
+import Text.Groom
+import FOL
+import Regularity
+import Connection
+import Solver
 
 (-->) :: Value -> Value -> Value
 p --> q = VNot p ∨ q
 
-julianEx :: [Clause]
 julianEx = toCNF $ doQuote  $ foldr1 VAnd
-           [VNot $ VAll $ \x -> gin x,
-            VAll $ \x -> good x --> drink x ash,
-            VExi $ \x -> gin (x) ∨ good x]
+           [ VNot $ VAll $ \x -> gin x,
+             VAll $ \x -> good x --> drink x ash,
+             VExi $ \x -> gin (x) ∨ good x]
     where gin x = VApp "gin" [x]
           good x = VApp "good" [x]
-          drink a b = VApp "drink" [a, b]
+          drink a b = VApp "drink" [a,b]
           ash =  VApp "ash" []
 
-test = solver 10 $
+testX = solver 10 $
 
          VNot (
 
@@ -34,18 +33,105 @@ test = solver 10 $
        
     where gin x = VApp "gin" [x]
           good x = VApp "good" [x]
-          drink a b = VApp "drink" [a, b]
+          drink a b = VApp "drink" [a,b]
           ash =  VApp "ash" []
           matt =  VApp "matt" []
 
--- >>> test
--- Just [fromList [(1,X)],fromList [(0,X)],fromList [(2,X)],fromList [(0,matt)],fromList [(3,X)]]
- 
+-- >>> testX
+-- Nothing
+
+test = 
+         VNot (
+        good matt
+        ) : [ VExi $ \x -> good x,
+              VAll $ \x -> good x  --> good x ]
+       
+    where good x = VApp "good" [x]
+          matt =  VApp "matt" []
+
+
+-- >>> solver 10 test
+-- Nothing
+
+
+cls = prepare test
+
+-- >>> putGroom (rotate cls)
+-- [(0, [(True, good (X))]),
+--  (1, [(False, good (α)), (True, good (α))]),
+--  (0, [(False, good (matt))])]
+
+t0 = extendUsingClause (head cls) (10,[[]])
+
+-- >>> t0
+-- (10,[[(False,good(matt))]])
+
+t1 :: [Tableau]
+t1 = map snd $ connection ((cls)) t0
+
+-- >>> t1
+-- [(11,[[(False,good(matt)),(False,good(matt))]])]
+
+
+t2 :: [Tableau]
+t2 = map snd $ connection (cls) (head t1)
+
+-- >>> t2
+-- [(12,[[(False,good(matt)),(False,good(matt)),(False,good(matt))]])]
+
+t3 :: [Tableau]
+t3 = map snd $ connection (cls) (head t2)
+
+-- >>> t3
+-- [(13,[[(False,good(matt)),(False,good(matt)),(False,good(matt)),(False,good(matt))]])]
+
+
+test' = putGroom $ toCNF $ doQuote $ foldr1 VAnd $
+
+         VNot ((VExi $ \x -> gin x ∧ drink x ash)
+        --  ∧ 
+        -- (VExi julian)
+        ∧
+        (good matt)
+        ) : [ VExi $ \x -> gin x ∧ good x,
+                     VAll $ \x -> good x  --> (good x ∧ drink x ash) ]
+       
+    where gin x = VApp "gin" [x]
+          good x = VApp "good" [x]
+          julian x = VApp "julian" [x]
+          drink a b = VApp "drink" [a,b]
+          ash =  VApp "ash" []
+          matt =  VApp "matt" []
+
+
+exx = VNot ((VExi $ \x -> gin (x) ∨ good x) `VAnd`
+        (VExi julian)) : [ VNot $ VAll $ \x -> gin x,
+                     VAll $ \x -> good x  --> drink x ash ]
+    where gin x = VApp "gin" [x]
+          good x = VApp "good" [x]
+          julian x = VApp "julian" [x]
+          drink a b = VApp "drink" [a,b]
+          ash =  VApp "ash" []
+       
+-- >>> pullQuantifiers $ skolemize $ toNNF $ doQuote (foldr1 VAnd exx)
+-- ∀x. ∀y. ∀z. (¬gin(x) ∧ ¬good(x) ∨ ¬julian(y)) ∧ ¬gin(X) ∧ (¬good(z) ∨ drink(z,
+--                                                                             ash))
+
+-- ex3 = [VAll $ \x -> drink x ash ∧ gin x, ,
+--        VExi $ \x -> gin (x) ∨ good x
+--       ]
+--     where gin x = VApp "gin" [x]
+--           julian x = VApp "julian" [x]
+--           good x = VApp "good" [x]
+--           drink a b = VApp "drink" [a,b]
+--           ash =  VApp "ash" []
+
 
 -- >>> putGroom julianEx
 -- [(0, [(False, gin (X))]),
 --  (1, [(False, good (α)), (True, drink (α, ash))]),
 --  (0, [(True, gin (Y)), (True, good (Y))])]
+
 
 exercise1' = toCNF $ doQuote $ foldr1 VAnd 
                [ VAll $ \x -> g (x,a) ∨ g (f x, x),
@@ -109,10 +195,10 @@ putGroom :: Show a => a -> IO ()
 putGroom a = putStrLn $ groom a
 
 testSimple :: IO ()
-testSimple = print $ refuteSimple 9 exercise1 -- never finds a solution
+testSimple = print $ Tableau.refute 9 exercise1 -- never finds a solution
 
 testConn :: IO ()
-testConn = putGroom $ FOL.Connection.refute 9 (exercise1 !! 0) exercise1
+testConn = putGroom $ Connection.refute 9 (exercise1 !! 0) exercise1
 
 -- >>> testConn
 -- [fromList [(1, a)], fromList [(1, f (α)), (2, α)],
@@ -121,9 +207,20 @@ testConn = putGroom $ FOL.Connection.refute 9 (exercise1 !! 0) exercise1
 --  fromList [(0, f (f (a))), (1, f (a))],
 --  fromList [(0, f (β)), (14, β)], fromList [(1, a), (16, f (a))]]
 
-main = putGroom $ FOL.Regularity.refute 9 (exercise1 !! 0) exercise1
+main = putGroom $ Regularity.refute 9 (exercise1 !! 0) exercise1
 
 -- >>> main
--- <interactive>:69:2-5: error:
---     • Variable not in scope: main
---     • Perhaps you meant ‘min’ (imported from Prelude)
+-- [fromList [(1, a)], fromList [(1, f (α)), (2, α)],
+--  fromList [(0, f (β)), (4, β)], fromList [(1, f (α)), (6, α)],
+--  fromList [(0, f (β)), (8, β)], fromList [(1, a), (10, f (a))],
+--  fromList [(0, f (f (f (f (a))))), (1, f (f (f (a))))],
+--  fromList [(0, f (β)), (14, β)], fromList [(1, a), (16, f (a))]]
+
+
+main' = putGroom $ Regularity.refute 9 (julianEx !! 0) julianEx
+
+
+-- >>> main'
+-- *** Exception: no solution found
+-- CallStack (from HasCallStack):
+--   error, called at ./Regularity.hs:93:25 in main:Regularity

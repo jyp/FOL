@@ -1,14 +1,13 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeSynonymInstances #-}
-
-module FOL.Regularity where
+module Regularity where
 
 import Control.Applicative
-import FOL.Search
-import FOL.Connection (without)
-import FOL.Unification
-import FOL.CNF
-import FOL.Tableau
+import Search
+import Connection (without)
+import Unification
+import CNF
+import Tableau
 import qualified Data.Map as M
 import Control.Arrow (first)
 
@@ -26,8 +25,8 @@ constraintSatisfied :: Constraint -> Bool
 constraintSatisfied (Constraint (Just u)) = M.null u
 constraintSatisfied (Constraint Nothing)  = False
 
--- | A regular tableau is one that never contains the same literal
--- twice. Rather than checking equality explicitly at every point, we
+-- A regular tableau is one that never contains the same literal
+-- twice.  Rather than checking equality explicitly at every point, we
 -- remember a bunch of constraints on literals, which, if any of them
 -- is satisfied, mean that some literals in the branch are equal.
 type RegTableau = (Tableau, [Constraint])

@@ -24,9 +24,10 @@ nnfStep _ = Nothing
 toNNF :: Term a -> Term a
 toNNF = topDown nnfStep
 
+
 skolem :: [Term a] -> Term a -> State [String] (Term a)
 skolem vs = \case
-  (All t) -> All <$> skolem (Var Nothing : (wk <$> vs)) t
+  (All t) -> All <$> skolem (Var Nothing:(wk <$> vs)) t
   (Exi t) -> do
     fs <- get
     let f:_ = fs
@@ -71,12 +72,15 @@ forgetQuantifiers (All t) = forgetQuantifiers (inc <$> t)
         inc (Just x) = 1 + x 
 forgetQuantifiers x = x
 
+
 mkConjuncts :: Term a -> [Term a]
 mkConjuncts Tru = []
 mkConjuncts (And x y) = mkConjuncts x ++ mkConjuncts y
-mkConjuncts (Or x y)  = [ Or t u | t <- mkConjuncts x, u <- mkConjuncts y ]
-mkConjuncts (All x)   = [ All t | t <- mkConjuncts x ]
+mkConjuncts (Or x y)  = [Or t u | t <- mkConjuncts x, u <- mkConjuncts y]
+mkConjuncts (All x)   = [All t | t <- mkConjuncts x]
 mkConjuncts x = [x]
+
+
 
 mkNakedClause :: Term Int -> NakedClause
 mkNakedClause Fal = []
