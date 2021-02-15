@@ -4,12 +4,13 @@ module FOL.Tableau where
 
 import Control.Applicative
 
+import FOL.FOL
 import FOL.CNF
-import Data.Tree
 import FOL.Unification
 import Data.Maybe
 import Control.Arrow (second)
 import FOL.Search
+import Text.PrettyPrint.HughesPJ hiding ((<>),empty,first)
 
 type Tableau = (Int, [Branch]) -- (freeVars,openBranches)  loss of sharing possible. (we have to refute all the branches)
 type Branch = [SimpleTerm] -- interpreted as a conjunction (which we have to refute)
@@ -111,3 +112,11 @@ rotateBranches (t, bs) = (t, rotate bs)
 
 rotate :: [a] -> [a]
 rotate (x:xs) = xs ++ [x]
+
+prettyTabl :: Tableau -> Doc
+prettyTabl (_,bs) = vcat $ fmap  (hang (text ">") 2 . prettyBranch) $ bs
+
+prettyBranch :: NakedClause -> Doc
+prettyBranch = prettyTerm . branchToTerm
+  where branchToTerm [] = Fal
+        branchToTerm xs = foldr1 Or (map simpToTerm xs) 

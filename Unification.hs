@@ -2,39 +2,45 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 module FOL.Unification where
 
+import FOL.FOL (prettyTerm,freeVarsNames)
 import FOL.CNF
 import qualified Data.Map as M
 import Data.Map (Map)
 import Control.Arrow (second)
+import Text.PrettyPrint.HughesPJ hiding ((<>))
 
-
-
-
-type Substitution = Map Int Literal
+newtype Substitution = Subst (Map Int Literal)
 
 class Substable t where
   applyS :: Substitution -> t -> t
+
 instance Substable a => Substable [a] where
   applyS s = fmap (applyS s)
 
-idSubst :: Map k a
-idSubst = M.empty
+idSubst :: Substitution
+idSubst = Subst M.empty
 
 -- | Add an "assignment" to a substitution
 (+>) :: Substitution -> (Int, Literal) -> Substitution
-s +> (x, t) = M.insert x t (M.map (applySubst (x ==> t)) s)
+Subst s +> (x, t) = Subst (M.insert x t (M.map (applySubst (x ==> t)) s))
 
 -- | Single literal substitution
 (==>) :: Int -> Literal -> Substitution
-x ==> t = M.singleton x t
+x ==> t = Subst (M.singleton x t)
 
 instance Substable Literal where
   applyS = applySubst
 
+instance Substable Substitution where
+  applyS s (Subst t) = Subst (fmap (applySubst s) t)
+
+after :: Substable t => Substitution -> t -> t
+t `after` s = applyS t s
+
 applySubst :: Substitution -> Literal -> Literal
-applySubst f (SVar i) = case M.lookup i f of
-                          Nothing -> SVar i
-                          Just t -> t
+applySubst (Subst f) (SVar i) = case M.lookup i f of
+                                  Nothing -> SVar i
+                                  Just t -> t
 applySubst f (SApp c xs) = SApp c (map (applySubst f) xs)
 
 instance Substable SimpleTerm where
@@ -87,4 +93,13 @@ sterm2 = SApp "f" [SVar 2, SApp "h" [SVar 3]]
 
 exampleSlide31 :: Maybe Substitution
 exampleSlide31 = unify [(sterm1, sterm2)] idSubst
+
+prettySubst :: Substitution -> Doc
+prettySubst (Subst s) = braces $ cat $ [text (freeVarsNames !! i) <> text " ↦ " <> (prettyTerm . litToTerm) t <> text "," | (i,t) <- M.assocs s]
+
+instance Show Substitution where
+  show = show . prettySubst
+
+-- >>> exampleSlide31
+-- Just {β ↦ h(δ),γ ↦ g(α,h(δ)),}
 

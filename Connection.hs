@@ -7,14 +7,19 @@ import FOL.CNF
 import FOL.Unification
 
 -- This is a prolog-style search. We keep a list of "goals" to fulfill (this is the 1st branch)
--- Example:
---  the first branch is f(x) ∧ g(y)
+-- Example 1:
+--  the (first) branch is f(x) ∨ g(y)
 -- We know that we must refute f(x)
 -- Say we find a clause like this:
---  ¬f(z) ∨ h(y)   (ie. f(x) -> h(y))
----------------
+--  ¬h(y) ∨ f(y)   (ie. h(z) -> f(y))
 -- Then we have the unification: x = y
--- and h(y) is added to the branch as a new goal.
+-- and h(z) ∨ g(y) is added as a new goal.
+
+-- Say we find a clause like this:
+--  ¬h(y) ∨ f(y) ∨ i(Z)   (ie. (h(z) ∧ ¬i(Z))  -> f(y))
+-- Then we have the unification: x = y
+-- we have now two goals:
+-- h(z) ∨ g(z) and i(Z) ∨ g(z) 
 
 -- | Try to close the 1st term of the 1st branch in the tableau.
 connection :: (Monad m, Alternative m)
@@ -30,24 +35,26 @@ connection cl t@(_fvs, branches) = do
   return (unifier, extendUsingClause c' t')
 
 -- | Remove the ith literal from a clause
-without :: Clause -> Int -> Clause
+without :: (a, [b]) -> Int -> (a, [b])
 without (fvs,ls) i = (fvs, help ls i)
  where help [] _ = []
-       help (x:xs) 0 = xs
+       help (_:xs) 0 = xs
        help (x:xs) n = x : help xs (n - 1)
 
--- | This will also never create any more than one branch.
-refuteD :: [Clause] -> Tableau -> Search [Substitution]
+-- >>> ('z',"abcde") `without` 3
+-- ('z',"abce")
+
+refuteD :: [Clause] -> Tableau -> Search Substitution
 refuteD cls t
-  | finished t = return []
+  | finished t = return idSubst
   | otherwise = do
       (mgu, t') <- connection cls t
-      (mgu:) <$> (deeper $ refuteD (rotate cls) $ filterClosed t')
+      (`after` mgu) <$> (deeper $ refuteD (rotate cls) $ filterClosed t')
 
 -- Question : Do we have to apply the normal closure rule (now called reduction) for completeness?
 
 -- refute depth initialClause clauseSet
-refute :: Int -> Clause -> [Clause] -> Maybe [Substitution]
+refute :: Int -> Clause -> [Clause] -> Maybe Substitution
 refute d c cs = case runSearch (refuteD
                                 cs
                                 t0) d of

@@ -8,6 +8,7 @@ import FOL.FOL
 import Data.Char
 import Control.Arrow (second)
 import Control.Monad.State
+import Text.PrettyPrint.HughesPJ (vcat,text, Doc)
 
 ------------------------------------------------------------------------------------
 
@@ -131,6 +132,9 @@ varsOf (SApp _ xs) = foldr (.) id $ map varsOf xs
 instance Show Literal where
   show = show . litToTerm
 
+
+
+
 showCNF :: [Clause] -> Term Int
 showCNF = cnfToTerm
 
@@ -148,11 +152,27 @@ showCNF = cnfToTerm
 
 cnfToTerm :: [Clause] -> Term Int
 cnfToTerm = foldr1 And . map clauseToTerm
-  where clauseToTerm (vs, t) = (foldr1 Or . map simpToTerm $ t)
-        simpToTerm (b, t) = (if not b then Not else id) (litToTerm t)
+
+
+clauseToTerm :: (a, [SimpleTerm]) -> Term Int
+clauseToTerm (_vs, []) = Fal
+clauseToTerm (_vs, t) = (foldr1 Or . map simpToTerm $ t)
+
+simpToTerm :: (Bool, Literal) -> Term Int
+simpToTerm (b, t) = (if not b then Not else id) (litToTerm t)
 
 litToTerm :: Literal -> Term Int
 litToTerm (SApp s args) = App s (map litToTerm args)
 litToTerm (SVar i) = Var i
 
 
+prettySimpleTerm :: SimpleTerm -> Doc
+-- prettySimpleTerm = text . show
+prettySimpleTerm = prettyTerm . simpToTerm
+
+prettyClause :: Clause -> Doc
+-- prettyClause = text . show
+prettyClause = prettyTerm . clauseToTerm
+
+prettyClauses :: [Clause] -> Doc
+prettyClauses = vcat . map prettyClause
