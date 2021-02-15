@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE TupleSections #-}
 module FOL.Connection where
 
@@ -7,6 +8,7 @@ import FOL.Search
 import FOL.CNF
 import FOL.Unification
 import Control.Arrow (second)
+import Text.PrettyPrint.HughesPJ hiding ((<>),empty,first)
 
 -- This is a prolog-style search. We keep a list of "goals" to fulfill (this is the 1st branch)
 -- Example 1:
@@ -25,7 +27,7 @@ import Control.Arrow (second)
 
 -- | Try to close the 1st term of the 1st branch in the tableau.
 connection :: (Monad m, Alternative m)
-           => [Clause] -> Tableau -> m (Substitution, Tableau)
+           => [Clause] -> Tableau -> m (Operation,Tableau)
 connection cl t@(_fvs, branches) = do 
   let ((l0:_) : _otherBranches) = branches      -- first literal of the first branch
   c <- choose cl                  -- try any clause
@@ -34,7 +36,7 @@ connection cl t@(_fvs, branches) = do
   let t' = applyS unifier t
       c' = applyS unifier <$> cRest
   -- Unifier succeds;
-  return (unifier, extendUsingClause c' t')
+  return (Connection c l0 unifier c', extendUsingClause c' t')
 
 select' :: [b] -> [(b,[b])]
 select' [] = []
@@ -46,18 +48,17 @@ select' (x:xs) = (x,xs): map (second (x:)) (select' xs)
 select :: (a, [b]) -> [(b,(a, [b]))]
 select (fvs,ls) = map (second (fvs,)) (select' ls)
 
-
-refuteD :: [Clause] -> Tableau -> Search Substitution
+refuteD :: [Clause] -> Tableau -> Search [(Tableau,Operation)]
 refuteD cls t
-  | finished t = return idSubst
+  | finished t = return []
   | otherwise = do
-      (mgu, t') <- connection cls t
-      (`after` mgu) <$> (deeper $ refuteD (rotate cls) $ filterClosed t')
+      (op, t') <- connection cls t
+      (\ops -> (t,op):(t',Close):ops) <$> (deeper $ refuteD (rotate cls) $ filterClosed t')
 
 -- Question : Do we have to apply the normal closure rule (now called reduction) for completeness?
 
 -- refute depth initialClause clauseSet
-refute :: Int -> Clause -> [Clause] -> Maybe Substitution
+refute :: Int -> Clause -> [Clause] -> Maybe [(Tableau,Operation)]
 refute d c cs = case runSearch (refuteD
                                 cs
                                 t0) d of
@@ -65,6 +66,14 @@ refute d c cs = case runSearch (refuteD
                   (x:_) -> Just x
     where t0 = extendUsingClause c initialTableau
 
+data Operation = Connection Clause SimpleTerm Substitution Clause | Close
 
+prettyOp :: Operation -> Doc
+prettyOp = \case
+  Close -> text "Close"
+  Connection cl t s cl' -> hang (text "Connect") 2 $
+                            cat [prettyClause cl <> text " and ", prettySimpleTerm t <> text " with ", prettySubst s <> text " yielding ", prettyClause cl']
 
-
+prettyTrace :: [(Tableau, Operation)] -> Doc
+prettyTrace trace = vcat $ concat [[hang (text "Goals") 2 (prettyTabl t),
+                                    prettyOp op] | (t,op)  <- trace]

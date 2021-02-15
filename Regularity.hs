@@ -5,7 +5,7 @@ module FOL.Regularity where
  
 import Control.Applicative
 import FOL.Search
-import FOL.Connection (select)
+import FOL.Connection (select, Operation(..),prettyOp)
 import FOL.Unification
 import FOL.CNF
 import FOL.Tableau
@@ -77,6 +77,9 @@ extendUsingClauseReg (clausFreeVars, conjuncts) ((tablFreeVars, (b:branches)), c
 -- because of some unifications; these can however be combined to the
 -- substitutions used to close the rest of the tableau.
 
+regularConn :: Clause -> RegTableau -> [RegTableau]
+regularConn cl t = snd <$> regularConnection [cl] t
+
 -- Read and understand Connection.hs before looking at this.
 regularConnection :: (Monad m, Alternative m) => [Clause] -> RegTableau -> m (Operation, RegTableau)
 regularConnection cl t@((_fvs, branches), _constrs) = do
@@ -89,7 +92,7 @@ regularConnection cl t@((_fvs, branches), _constrs) = do
       c' = applyS unifier <$> cRest
   return (Connection c l0 unifier c', extendUsingClauseReg c' t')
 
-data Operation = Connection Clause SimpleTerm Substitution Clause | Close
+
 
 refuteD :: [Clause] -> RegTableau -> Search [(RegTableau,Operation)]
 refuteD cls t@((_fvs, branches), constrs)
@@ -101,27 +104,23 @@ refuteD cls t@((_fvs, branches), constrs)
       (\ops -> (t,op):(t',Close):ops) <$> (deeper $ refuteD (rotate cls) closed_t')
 
 -- refute depth initialClause clauseSet
-refute :: Int -> Clause -> [Clause] -> Maybe [(RegTableau,Operation)]
-refute d c cs = case runSearch (refuteD
-                                cs
-                                t0) d of
+refute :: Int -> [Clause] -> Maybe [(RegTableau,Operation)]
+refute d cs = case runSearch help d of
                   [] -> Nothing
                   (x:_) -> Just x
-  where t0 = (extendUsingClause c initialTableau, [])
+  where help = do
+          c <- choose cs -- any of the clause may yield a
+                         -- contradiction but some will be just
+                         -- neutral, so we need to try them all
+          refuteD cs (extendUsingClause c initialTableau, [])
 
 
-
-
-prettyOp :: Operation -> Doc
-prettyOp = \case
-  Close -> text "Close"
-  Connection cl t s cl' -> hang (text "Connect") 2 $
-                            cat [prettyClause cl <> text " and ", prettySimpleTerm t <> text " with ", prettySubst s <> text " yielding ", prettyClause cl']
+prettyRegTabl :: RegTableau -> Doc
+prettyRegTabl (t,cs) = vcat [hang (text "Goals") 2 (prettyTabl t),
+                             hang (text "Constraints") 2 (vcat $ fmap prettyConstraint cs)]
 
 prettyTrace :: [(RegTableau, Operation)] -> Doc
-prettyTrace trace = vcat $ concat [[hang (text "Goals") 2 (prettyTabl t),
-                                    hang (text "Constraints") 2 (vcat $ fmap prettyConstraint cs),
-                                    prettyOp op] | ((t,cs),op)  <- trace]
+prettyTrace trace = vcat $ concat [[prettyRegTabl t, prettyOp op] | (t,op)  <- trace]
 
 prettyConstraint :: Constraint -> Doc
 prettyConstraint (Constraint Nothing) = text "Unsat"

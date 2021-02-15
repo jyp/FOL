@@ -6,11 +6,73 @@ import FOL.CNF
 import Text.Groom
 import FOL.FOL
 import FOL.Regularity
-import FOL.Connection
+import qualified FOL.Connection
+import FOL.Connection (connection)
 import FOL.Solver
 
 (-->) :: Value -> Value -> Value
 p --> q = VNot p ∨ q
+
+emacsEx :: [Clause]
+emacsEx = prepare  [p1,p2, VNot  (p1 --> p2)]
+    where command x = VApp "command" [x]
+          prepared x = VApp "prepared" [x]
+          wait(x,y) =  VApp "wait" [x,y]
+          emacs = VApp "emacs" []
+          p1 = (VAll $ \x -> VNot (VExi $ \y -> wait(y,x)) ∨ (VExi $ \y -> wait(y, x) ∧ prepared(x)))
+          p2 = (VExi $ \x -> command (x) ∧ wait (x,emacs))
+
+-- >>> doQuote <$> emacsEx
+-- [∀x. ¬(∃y. wait(y,x)) ∨ (∃y. wait(y,x) ∧ prepared(x)),∃x. command(x) ∧ wait(x,emacs),¬(¬(∀x. ¬(∃y. wait(y,x)) ∨ (∃y. wait(y,
+--                                      x) ∧ prepared(x))) ∨ (∃x. command(x) ∧ wait(x,emacs)))]
+
+-- >>> prettyClauses $ prepare emacsEx
+-- ¬wait(δ,η) ∨ wait(X(η),η)
+-- ¬wait(δ,η) ∨ prepared(η)
+-- command(Y)
+-- wait(Y,emacs)
+-- ¬wait(β,γ) ∨ wait(Z(γ),γ)
+-- ¬wait(β,γ) ∨ prepared(γ)
+-- ¬command(α) ∨ ¬wait(α,emacs)
+
+rotateN :: Int -> [a] -> [a]
+rotateN 0 = id
+rotateN n = rotate . rotateN (n-1)
+
+tt = head $
+     regularConn (c 3) $
+     extendUsingClauseReg (c 0) $
+     (initialTableau,[])
+     where c n = (emacsEx !! n)
+
+-- >>> prettyRegTabl tt
+-- Goals > wait(X(emacs),emacs)
+-- Constraints
+--  
+-- (0,[[]])
+
+-- >>> ttt
+
+ttt :: Maybe [(RegTableau, FOL.Connection.Operation)]
+ttt = solveCNF 10 emacsEx
+
+-- >>> prettyTrace (fromJust  ttt)
+-- Goals > command(Y)
+-- Constraints
+-- Connect
+--   ¬command(α) ∨ ¬wait(α,emacs) and 
+--   command(Y) with 
+--   {α ↦ Y,} yielding 
+--   ¬wait(Y,emacs)
+-- Goals > ¬wait(Y,emacs) ∨ command(Y)
+-- Constraints
+-- Close
+-- Goals > ¬wait(Y,emacs) ∨ command(Y)
+-- Constraints
+-- Connect wait(Y,emacs) and ¬wait(Y,emacs) with {} yielding ⊥
+-- Goals
+-- Constraints
+-- Close
 
 test = 
          VNot (
@@ -88,7 +150,7 @@ test' = prepare $
 -- ¬good(α) ∨ good(α)
 -- ¬good(α) ∨ drink(α,ash)
 
--- >>> print $ prettyTrace $ fromJust $ solveCNF 10 test'
+-- >>> print $ prettyTrace $ fromJust $ solveCNF 10 $ test'
 -- Goals
 --   > ¬gin(γ)
 --   > ¬drink(γ,ash)
@@ -228,18 +290,113 @@ testSimple :: IO ()
 testSimple = print $ FOL.Tableau.refute 9 exercise1 -- never finds a solution
 
 testConn :: IO ()
-testConn = putGroom $ FOL.Connection.refute 9 (exercise1 !! 0) exercise1
+testConn = print $ FOL.Connection.prettyTrace $ fromJust $ FOL.Connection.refute 9 (exercise1 !! 0) exercise1
 
 -- >>> testConn
--- Just
---   [fromList [(1, a)], fromList [(0, a), (1, f (a))],
---    fromList [(0, f (f (a))), (1, f (a))],
---    fromList [(0, f (f (a))), (1, f (a))],
---    fromList [(0, f (f (a))), (1, f (a))], fromList [(0, a)],
---    fromList [(0, a), (1, a)], fromList [(0, f (a)), (1, a)],
---    fromList [(0, a), (1, f (a))]]
+-- Goals
+--   > g(α,a)
+--   > g(f(α),α)
+-- Connect
+--   ¬g(α,β) ∨ g(β,f(β)) and g(α,a) with {β ↦ a,} yielding g(a,f(a))
+-- Goals
+--   > g(a,f(a)) ∨ g(α,a)
+--   > g(f(α),α)
+-- Close
+-- Goals
+--   > g(a,f(a)) ∨ g(α,a)
+--   > g(f(α),α)
+-- Connect
+--   ¬g(α,β) ∨ g(f(β),β) and 
+--   g(a,f(a)) with 
+--   {α ↦ a,β ↦ f(a),} yielding 
+--   g(f(f(a)),f(a))
+-- Goals
+--   > g(f(f(a)),f(a)) ∨ g(a,f(a)) ∨ g(a,a)
+--   > g(f(a),a)
+-- Close
+-- Goals
+--   > g(f(f(a)),f(a)) ∨ g(a,f(a)) ∨ g(a,a)
+--   > g(f(a),a)
+-- Connect
+--   ¬g(α,β) ∨ g(f(β),β) and 
+--   g(f(f(a)),f(a)) with 
+--   {α ↦ f(f(a)),β ↦ f(a),} yielding 
+--   g(f(f(a)),f(a))
+-- Goals
+--   > g(f(f(a)),f(a)) ∨ g(f(f(a)),f(a)) ∨ g(a,f(a)) ∨ g(a,a)
+--   > g(f(a),a)
+-- Close
+-- Goals
+--   > g(f(f(a)),f(a)) ∨ g(f(f(a)),f(a)) ∨ g(a,f(a)) ∨ g(a,a)
+--   > g(f(a),a)
+-- Connect
+--   ¬g(α,β) ∨ g(f(β),β) and 
+--   g(f(f(a)),f(a)) with 
+--   {α ↦ f(f(a)),β ↦ f(a),} yielding 
+--   g(f(f(a)),f(a))
+-- Goals
+--   > g(f(f(a)),f(a)) ∨ g(f(f(a)),f(a)) ∨ g(f(f(a)),f(a)) ∨ g(a,
+--                                                             f(a)) ∨ g(a,a)
+--   > g(f(a),a)
+-- Close
+-- Goals
+--   > g(f(f(a)),f(a)) ∨ g(f(f(a)),f(a)) ∨ g(f(f(a)),f(a)) ∨ g(a,
+--                                                             f(a)) ∨ g(a,a)
+--   > g(f(a),a)
+-- Connect
+--   ¬g(α,β) ∨ ¬g(β,a) and 
+--   g(f(f(a)),f(a)) with 
+--   {α ↦ f(f(a)),β ↦ f(a),} yielding 
+--   ¬g(f(a),a)
+-- Goals
+--   > ¬g(f(a),a) ∨ g(f(f(a)),f(a)) ∨ g(f(f(a)),f(a)) ∨ g(f(f(a)),
+--                                                        f(a)) ∨ g(a,f(a)) ∨ g(a,a)
+--   > g(f(a),a)
+-- Close
+-- Goals
+--   > ¬g(f(a),a) ∨ g(f(f(a)),f(a)) ∨ g(f(f(a)),f(a)) ∨ g(f(f(a)),
+--                                                        f(a)) ∨ g(a,f(a)) ∨ g(a,a)
+--   > g(f(a),a)
+-- Connect
+--   g(α,a) ∨ g(f(α),α) and ¬g(f(a),a) with {α ↦ a,} yielding g(a,a)
+-- Goals
+--   > g(a,a) ∨ ¬g(f(a),a) ∨ g(f(f(a)),f(a)) ∨ g(f(f(a)),
+--                                               f(a)) ∨ g(f(f(a)),f(a)) ∨ g(a,f(a)) ∨ g(a,a)
+--   > g(f(a),a)
+-- Close
+-- Goals
+--   > g(a,a) ∨ ¬g(f(a),a) ∨ g(f(f(a)),f(a)) ∨ g(f(f(a)),
+--                                               f(a)) ∨ g(f(f(a)),f(a)) ∨ g(a,f(a)) ∨ g(a,a)
+--   > g(f(a),a)
+-- Connect
+--   ¬g(α,β) ∨ g(f(β),β) and 
+--   g(a,a) with 
+--   {α ↦ a,β ↦ a,} yielding 
+--   g(f(a),a)
+-- Goals
+--   > g(f(a),a) ∨ g(a,a) ∨ ¬g(f(a),a) ∨ g(f(f(a)),f(a)) ∨ g(f(f(a)),
+--                                                           f(a)) ∨ g(f(f(a)),f(a)) ∨ g(a,f(a)) ∨ g(a,
+--                                                                                                   a)
+--   > g(f(a),a)
+-- Close
+-- Goals > g(f(a),a)
+-- Connect
+--   ¬g(α,β) ∨ g(β,f(β)) and 
+--   g(f(a),a) with 
+--   {α ↦ f(a),β ↦ a,} yielding 
+--   g(a,f(a))
+-- Goals > g(a,f(a)) ∨ g(f(a),a)
+-- Close
+-- Goals > g(a,f(a)) ∨ g(f(a),a)
+-- Connect
+--   ¬g(α,β) ∨ ¬g(β,a) and 
+--   g(a,f(a)) with 
+--   {α ↦ a,β ↦ f(a),} yielding 
+--   ¬g(f(a),a)
+-- Goals > ¬g(f(a),a) ∨ g(a,f(a)) ∨ g(f(a),a)
+-- Close
 
-main =  print $ prettyTrace $ fromJust $ FOL.Regularity.refute 9 (exercise1 !! 0) exercise1
+-- main =  print $ prettyTrace $ fromJust $ FOL.Regularity.refute 9 (exercise1 !! 0) exercise1
 
 -- >>> main
 -- Goals
