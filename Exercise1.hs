@@ -89,43 +89,43 @@ test' = prepare $
 -- ¬good(α) ∨ drink(α,ash)
 
 -- >>> print $ prettyTrace $ fromJust $ solveCNF 10 test'
--- Tableau
---   branch ¬gin(γ)
---   branch ¬drink(γ,ash)
---   branch ¬julian(β)
+-- Goals
+--   > ¬gin(γ)
+--   > ¬drink(γ,ash)
+--   > ¬julian(β)
 -- Constraints
 -- Connect gin(X) and ¬gin(γ) with {γ ↦ X,} yielding ⊥
--- Tableau
---   branch ¬drink(X,ash)
---   branch ¬julian(β)
+-- Goals
+--   > ¬drink(X,ash)
+--   > ¬julian(β)
 -- Constraints
 -- Close
--- Tableau
---   branch ¬drink(X,ash)
---   branch ¬julian(β)
+-- Goals
+--   > ¬drink(X,ash)
+--   > ¬julian(β)
 -- Constraints
 -- Connect
 --   ¬good(α) ∨ drink(α,ash) and 
 --   ¬drink(X,ash) with 
 --   {α ↦ X,} yielding 
 --   ¬good(X)
--- Tableau
---   branch ¬good(X) ∨ ¬drink(X,ash)
---   branch ¬julian(β)
+-- Goals
+--   > ¬good(X) ∨ ¬drink(X,ash)
+--   > ¬julian(β)
 -- Constraints Unsat
 -- Close
--- Tableau
---   branch ¬good(X) ∨ ¬drink(X,ash)
---   branch ¬julian(β)
+-- Goals
+--   > ¬good(X) ∨ ¬drink(X,ash)
+--   > ¬julian(β)
 -- Constraints Unsat
 -- Connect good(X) and ¬good(X) with {} yielding ⊥
--- Tableau branch ¬julian(β)
+-- Goals > ¬julian(β)
 -- Constraints
 -- Close
--- Tableau branch ¬julian(β)
+-- Goals > ¬julian(β)
 -- Constraints
 -- Connect julian(Y) and ¬julian(β) with {β ↦ Y,} yielding ⊥
--- Tableau
+-- Goals
 -- Constraints
 -- Close
 

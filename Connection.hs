@@ -1,3 +1,4 @@
+{-# LANGUAGE TupleSections #-}
 module FOL.Connection where
 
 import Control.Applicative
@@ -5,6 +6,7 @@ import FOL.Tableau
 import FOL.Search
 import FOL.CNF
 import FOL.Unification
+import Control.Arrow (second)
 
 -- This is a prolog-style search. We keep a list of "goals" to fulfill (this is the 1st branch)
 -- Example 1:
@@ -26,23 +28,24 @@ connection :: (Monad m, Alternative m)
            => [Clause] -> Tableau -> m (Substitution, Tableau)
 connection cl t@(_fvs, branches) = do 
   let ((l0:_) : _otherBranches) = branches      -- first literal of the first branch
-  c@(_fvs, ls) <- choose cl       -- try any clause
-  (i, l) <- choose (zip [0..] ls) -- try any literal in the clause
+  c <- choose cl                  -- try any clause
+  (l, cRest) <- choose (select c) -- try any literal in the clause
   unifier <- try $ unifyTop (l0, l)   -- try to unify l0 and l
   let t' = applyS unifier t
-      c' = applyS unifier <$> (c `without` i)
+      c' = applyS unifier <$> cRest
   -- Unifier succeds;
   return (unifier, extendUsingClause c' t')
 
--- | Remove the ith literal from a clause
-without :: (a, [b]) -> Int -> (a, [b])
-without (fvs,ls) i = (fvs, help ls i)
- where help [] _ = []
-       help (_:xs) 0 = xs
-       help (x:xs) n = x : help xs (n - 1)
+select' :: [b] -> [(b,[b])]
+select' [] = []
+select' (x:xs) = (x,xs): map (second (x:)) (select' xs)
 
--- >>> ('z',"abcde") `without` 3
--- ('z',"abce")
+-- >>> select' "abcde"
+-- [('a',"bcde"),('b',"acde"),('c',"abde"),('d',"abce"),('e',"abcd")]
+
+select :: (a, [b]) -> [(b,(a, [b]))]
+select (fvs,ls) = map (second (fvs,)) (select' ls)
+
 
 refuteD :: [Clause] -> Tableau -> Search Substitution
 refuteD cls t

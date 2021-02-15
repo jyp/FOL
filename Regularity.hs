@@ -5,21 +5,20 @@ module FOL.Regularity where
  
 import Control.Applicative
 import FOL.Search
-import FOL.Connection (without)
+import FOL.Connection (select)
 import FOL.Unification
 import FOL.CNF
 import FOL.Tableau
 import qualified Data.Map as M
 import Control.Arrow (first)
 import Text.PrettyPrint.HughesPJ hiding ((<>),empty,first)
-import FOL.Unification (prettySubst)
 
 newtype Constraint = Constraint {fromConstraint :: (Maybe Substitution)} deriving Show
 -- Nothing --> No substitution, the constraint can never be satisfied
 -- Just x --> all variables need to be substituted to the corresponding literals.
 
 instance Substable Constraint where
-  applyS s (Constraint Nothing) = Constraint Nothing
+  applyS _ (Constraint Nothing) = Constraint Nothing
   applyS s (Constraint (Just (Subst u)))
     = Constraint (unifyAll (both (applyS s)
                             <$> [ (SVar x, t) | (x, t) <- M.assocs u ]))
@@ -78,14 +77,14 @@ extendUsingClauseReg (clausFreeVars, conjuncts) ((tablFreeVars, (b:branches)), c
 -- Read and understand Connection.hs before looking at this.
 regularConnection :: (Monad m, Alternative m) => [Clause] -> RegTableau -> m (Operation, RegTableau)
 regularConnection cl t@((_fvs, branches), _constrs) = do
-   let ((l0:_) : _) = branches     -- consider the 1st branch
-   c@(_fvs, ls) <- choose cl       -- try any clause
-   (i, l) <- choose (zip [0..] ls) -- try any literal in the clause
-   unifier <- try $ unifyTop (l0, l)
-   -- Unifier succeeds;
-   let t' = applyS unifier t
-       c' = applyS unifier <$> (c `without` i)
-   return (Connection c l0 unifier c', extendUsingClauseReg c' t')
+  let ((l0:_) : _) = branches     -- consider the 1st branch
+  c <- choose cl                  -- try the first clause only (rotate takes care of ordering clauses)
+  (l, cRest) <- choose (select c) -- try any literal in the clause
+  unifier <- try $ unifyTop (l0, l)
+  -- Unifier succeeds;
+  let t' = applyS unifier t
+      c' = applyS unifier <$> cRest
+  return (Connection c l0 unifier c', extendUsingClauseReg c' t')
 
 data Operation = Connection Clause SimpleTerm Substitution Clause | Close
 
