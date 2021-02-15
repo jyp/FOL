@@ -112,12 +112,12 @@ test' = prepare $
 -- Goals
 --   > ¬good(X) ∨ ¬drink(X,ash)
 --   > ¬julian(β)
--- Constraints Unsat
+-- Constraints
 -- Close
 -- Goals
 --   > ¬good(X) ∨ ¬drink(X,ash)
 --   > ¬julian(β)
--- Constraints Unsat
+-- Constraints
 -- Connect good(X) and ¬good(X) with {} yielding ⊥
 -- Goals > ¬julian(β)
 -- Constraints
@@ -251,12 +251,12 @@ main =  print $ prettyTrace $ fromJust $ FOL.Regularity.refute 9 (exercise1 !! 0
 -- Goals
 --   > g(a,f(a)) ∨ g(α,a)
 --   > g(f(α),α)
--- Constraints Unsat
+-- Constraints
 -- Close
 -- Goals
 --   > g(a,f(a)) ∨ g(α,a)
 --   > g(f(α),α)
--- Constraints Unsat
+-- Constraints
 -- Connect
 --   ¬g(α,β) ∨ g(f(β),β) and 
 --   g(a,f(a)) with 
@@ -266,15 +266,11 @@ main =  print $ prettyTrace $ fromJust $ FOL.Regularity.refute 9 (exercise1 !! 0
 --   > g(f(f(a)),f(a)) ∨ g(a,f(a)) ∨ g(a,a)
 --   > g(f(a),a)
 -- Constraints
---   Unsat
---   Unsat
 -- Close
 -- Goals
 --   > g(f(f(a)),f(a)) ∨ g(a,f(a)) ∨ g(a,a)
 --   > g(f(a),a)
 -- Constraints
---   Unsat
---   Unsat
 -- Connect
 --   ¬g(α,β) ∨ ¬g(β,a) and 
 --   g(f(f(a)),f(a)) with 
@@ -284,36 +280,22 @@ main =  print $ prettyTrace $ fromJust $ FOL.Regularity.refute 9 (exercise1 !! 0
 --   > ¬g(f(a),a) ∨ g(f(f(a)),f(a)) ∨ g(a,f(a)) ∨ g(a,a)
 --   > g(f(a),a)
 -- Constraints
---   Unsat
---   Unsat
---   Unsat
 -- Close
 -- Goals
 --   > ¬g(f(a),a) ∨ g(f(f(a)),f(a)) ∨ g(a,f(a)) ∨ g(a,a)
 --   > g(f(a),a)
 -- Constraints
---   Unsat
---   Unsat
---   Unsat
 -- Connect
 --   ¬g(α,β) ∨ g(f(β),β) and ¬g(f(a),a) with {β ↦ a,} yielding ¬g(α,a)
 -- Goals
 --   > ¬g(κ,a) ∨ ¬g(f(a),a) ∨ g(f(f(a)),f(a)) ∨ g(a,f(a)) ∨ g(a,a)
 --   > g(f(a),a)
--- Constraints
---   {κ ↦ f(a),}
---   Unsat
---   Unsat
---   Unsat
+-- Constraints {κ ↦ f(a),}
 -- Close
 -- Goals
 --   > ¬g(κ,a) ∨ ¬g(f(a),a) ∨ g(f(f(a)),f(a)) ∨ g(a,f(a)) ∨ g(a,a)
 --   > g(f(a),a)
--- Constraints
---   {κ ↦ f(a),}
---   Unsat
---   Unsat
---   Unsat
+-- Constraints {κ ↦ f(a),}
 -- Connect
 --   g(α,a) ∨ g(f(α),α) and ¬g(κ,a) with {κ ↦ α,} yielding g(f(α),α)
 -- Goals
@@ -321,11 +303,7 @@ main =  print $ prettyTrace $ fromJust $ FOL.Regularity.refute 9 (exercise1 !! 0
 --                                                            f(a)) ∨ g(a,a)
 --   > g(f(a),a)
 -- Constraints
---   Unsat
---   Unsat
 --   {μ ↦ f(a),}
---   Unsat
---   Unsat
 --   {α ↦ f(a),}
 -- Close
 -- Goals
@@ -333,11 +311,7 @@ main =  print $ prettyTrace $ fromJust $ FOL.Regularity.refute 9 (exercise1 !! 0
 --                                                            f(a)) ∨ g(a,a)
 --   > g(f(a),a)
 -- Constraints
---   Unsat
---   Unsat
 --   {μ ↦ f(a),}
---   Unsat
---   Unsat
 --   {α ↦ f(a),}
 -- Connect
 --   ¬g(α,β) ∨ ¬g(β,a) and 
@@ -348,54 +322,30 @@ main =  print $ prettyTrace $ fromJust $ FOL.Regularity.refute 9 (exercise1 !! 0
 --   > ¬g(ν,f(a)) ∨ g(f(a),a) ∨ ¬g(α,a) ∨ ¬g(f(a),a) ∨ g(f(f(a)),
 --                                                       f(a)) ∨ g(a,f(a)) ∨ g(a,a)
 --   > g(f(a),a)
--- Constraints
---   Unsat
---   Unsat
---   Unsat
---   Unsat
---   Unsat
---   Unsat
---   {α ↦ f(a),}
+-- Constraints {α ↦ f(a),}
 -- Close
 -- Goals > g(f(a),a)
--- Constraints
---   Unsat
---   Unsat
---   Unsat
---   Unsat
---   Unsat
---   Unsat
---   {α ↦ f(a),}
+-- Constraints {α ↦ f(a),}
 -- Connect
 --   ¬g(α,β) ∨ ¬g(β,a) and 
 --   g(f(a),a) with 
 --   {β ↦ f(a),} yielding 
 --   ¬g(α,f(a))
 -- Goals > ¬g(ρ,f(a)) ∨ g(f(a),a)
--- Constraints
---   Unsat
---   {α ↦ f(a),}
+-- Constraints {α ↦ f(a),}
 -- Close
 -- Goals > ¬g(ρ,f(a)) ∨ g(f(a),a)
--- Constraints
---   Unsat
---   {α ↦ f(a),}
+-- Constraints {α ↦ f(a),}
 -- Connect
 --   ¬g(α,β) ∨ g(β,f(β)) and 
 --   ¬g(ρ,f(a)) with 
 --   {β ↦ a,ρ ↦ a,} yielding 
 --   ¬g(α,a)
 -- Goals > ¬g(φ,a) ∨ ¬g(a,f(a)) ∨ g(f(a),a)
--- Constraints
---   Unsat
---   Unsat
---   {α ↦ f(a),}
+-- Constraints {α ↦ f(a),}
 -- Close
 -- Goals > ¬g(φ,a) ∨ ¬g(a,f(a)) ∨ g(f(a),a)
--- Constraints
---   Unsat
---   Unsat
---   {α ↦ f(a),}
+-- Constraints {α ↦ f(a),}
 -- Connect
 --   ¬g(α,β) ∨ g(f(β),β) and 
 --   ¬g(φ,a) with 
@@ -404,8 +354,6 @@ main =  print $ prettyTrace $ fromJust $ FOL.Regularity.refute 9 (exercise1 !! 0
 -- Goals > ¬g(ξ,a) ∨ ¬g(f(a),a) ∨ ¬g(a,f(a)) ∨ g(f(a),a)
 -- Constraints
 --   {ξ ↦ f(a),}
---   Unsat
---   Unsat
 --   {α ↦ f(a),}
 -- Close
 

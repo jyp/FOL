@@ -23,6 +23,9 @@ instance Substable Constraint where
     = Constraint (unifyAll (both (applyS s)
                             <$> [ (SVar x, t) | (x, t) <- M.assocs u ]))
 
+sweepConstraints :: [Constraint] -> [Constraint]
+sweepConstraints = filter (not . unsatisfiable)
+
 unsatisfiable :: Constraint -> Bool
 unsatisfiable = \case Constraint Nothing -> True
                       _ -> False
@@ -38,7 +41,7 @@ constraintSatisfied (Constraint Nothing)  = False
 type RegTableau = (Tableau, [Constraint])
 
 instance Substable RegTableau where
-  applyS s (t, cs) = (applyS s t, filter (not . unsatisfiable) (applyS s cs))
+  applyS s (t, cs) = (applyS s t, sweepConstraints (applyS s cs))
 
 -- | Extend the 1st branch using given clause.
 extendUsingClauseReg :: Clause -> RegTableau -> RegTableau
@@ -47,9 +50,9 @@ extendUsingClauseReg (clausFreeVars, conjuncts) ((tablFreeVars, (b:branches)), c
       [ l:b |  l <- clause'] -- each conjunct in the new clause generates a new goal, together with the rest of the disjuncts of the branch
       ++ branches  -- all the old goals remain
      ),
-      [Constraint (unifyEq (l, l')) -- record constraint
-      | l <- b, -- for every literal in the branch
-        l' <- clause' ] ++ constrs -- for every literal in the clause
+      sweepConstraints [Constraint (unifyEq (l, l')) -- record constraint
+                       | l <- b, -- for every literal in the branch
+                         l' <- clause' ] ++ constrs -- for every literal in the clause
      -- Idea. If a literal is found twice exactly the same on a
      -- branch, then we are wasting our time. We should have proven
      -- the first literal immediately instead of proving a copy of
