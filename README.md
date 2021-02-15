@@ -1,0 +1,2 @@
+# FOL
+Minimal FOL prover
