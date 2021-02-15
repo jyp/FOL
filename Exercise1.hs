@@ -3,7 +3,7 @@ module FOL.Exercise1 where
 import FOL.Tableau
 import FOL.CNF
 import FOL.Unification
-import FOL.Text.Groom
+import Text.Groom
 import FOL.FOL
 import FOL.Regularity
 import FOL.Connection
@@ -38,7 +38,7 @@ testX = solver 10 $
           matt =  VApp "matt" []
 
 -- >>> testX
--- Nothing
+-- <interactive>:35:2-6: error: Variable not in scope: testX
 
 test = 
          VNot (
@@ -76,21 +76,26 @@ t1 = map snd $ connection ((cls)) t0
 t2 :: [Tableau]
 t2 = map snd $ connection (cls) (head t1)
 
--- >>> t2
--- [(12,[[(False,good(matt)),(False,good(matt)),(False,good(matt))]])]
+-- >>> putGroom t2
+-- [(12,
+--   [[(False, good (matt)), (False, good (matt)),
+--     (False, good (matt))]])]
 
 t3 :: [Tableau]
 t3 = map snd $ connection (cls) (head t2)
 
--- >>> t3
--- [(13,[[(False,good(matt)),(False,good(matt)),(False,good(matt)),(False,good(matt))]])]
+-- >>> putGroom t3
+-- [(13,
+--   [[(False, good (matt)), (False, good (matt)), (False, good (matt)),
+--     (False, good (matt))]])]
 
 
-test' = putGroom $ toCNF $ doQuote $ foldr1 VAnd $
+test' :: [Clause]
+test' = prepare $
 
          VNot ((VExi $ \x -> gin x ∧ drink x ash)
-        --  ∧ 
-        -- (VExi julian)
+         ∧ 
+        (VExi julian)
         ∧
         (good matt)
         ) : [ VExi $ \x -> gin x ∧ good x,
@@ -103,10 +108,20 @@ test' = putGroom $ toCNF $ doQuote $ foldr1 VAnd $
           ash =  VApp "ash" []
           matt =  VApp "matt" []
 
+-- >>> putGroom test'
+-- [(3,
+--   [(False, gin (γ)), (False, drink (γ, ash)), (False, julian (β)),
+--    (False, good (matt))]),
+--  (0, [(True, gin (X))]), (0, [(True, good (X))]),
+--  (1, [(False, good (α)), (True, good (α))]),
+--  (1, [(False, good (α)), (True, drink (α, ash))])]
+
+-- >>> solveCNF 10 test'
+-- Nothing
 
 exx = VNot ((VExi $ \x -> gin (x) ∨ good x) `VAnd`
         (VExi julian)) : [ VNot $ VAll $ \x -> gin x,
-                     VAll $ \x -> good x  --> drink x ash ]
+                           VAll $ \x -> good x  --> drink x ash ]
     where gin x = VApp "gin" [x]
           good x = VApp "good" [x]
           julian x = VApp "julian" [x]
@@ -147,10 +162,10 @@ exercise1' = toCNF $ doQuote $ foldr1 VAnd
 
 
 -- >>> putGroom exercise1'
--- [(1, [(True, g (α, a)), (True, g (f (α), α))]),
---  (1, [(True, g (α, a)), (True, g (α, f (α)))]),
---  (2, [(False, g (β, α)), (True, g (α, f (α)))]),
---  (2, [(False, g (β, α)), (True, g (f (α), α))]),
+-- [(8, [(True, g (κ, a)), (True, g (f (κ), κ))]),
+--  (7, [(True, g (ι, a)), (True, g (ι, f (ι)))]),
+--  (6, [(False, g (ε, η)), (True, g (η, f (η)))]),
+--  (4, [(False, g (δ, γ)), (True, g (f (γ), γ))]),
 --  (2, [(False, g (β, α)), (False, g (α, a))])]
 
 exercise1 :: [Clause]
@@ -195,32 +210,30 @@ putGroom :: Show a => a -> IO ()
 putGroom a = putStrLn $ groom a
 
 testSimple :: IO ()
-testSimple = print $ Tableau.refute 9 exercise1 -- never finds a solution
+testSimple = print $ FOL.Tableau.refute 9 exercise1 -- never finds a solution
 
 testConn :: IO ()
-testConn = putGroom $ Connection.refute 9 (exercise1 !! 0) exercise1
+testConn = putGroom $ FOL.Connection.refute 9 (exercise1 !! 0) exercise1
 
 -- >>> testConn
--- [fromList [(1, a)], fromList [(1, f (α)), (2, α)],
---  fromList [(1, f (α)), (4, α)], fromList [(1, f (α)), (6, α)],
---  fromList [(0, f (β)), (8, β)], fromList [(1, a), (10, f (a))],
---  fromList [(0, f (f (a))), (1, f (a))],
---  fromList [(0, f (β)), (14, β)], fromList [(1, a), (16, f (a))]]
+-- Just
+--   [fromList [(1, a)], fromList [(0, a), (1, f (a))],
+--    fromList [(0, f (f (a))), (1, f (a))],
+--    fromList [(0, f (f (a))), (1, f (a))],
+--    fromList [(0, f (f (a))), (1, f (a))], fromList [(0, a)],
+--    fromList [(0, a), (1, a)], fromList [(0, f (a)), (1, a)],
+--    fromList [(0, a), (1, f (a))]]
 
-main = putGroom $ Regularity.refute 9 (exercise1 !! 0) exercise1
+main = putGroom $ FOL.Regularity.refute 9 (exercise1 !! 0) exercise1
 
 -- >>> main
--- [fromList [(1, a)], fromList [(1, f (α)), (2, α)],
---  fromList [(0, f (β)), (4, β)], fromList [(1, f (α)), (6, α)],
---  fromList [(0, f (β)), (8, β)], fromList [(1, a), (10, f (a))],
---  fromList [(0, f (f (f (f (a))))), (1, f (f (f (a))))],
---  fromList [(0, f (β)), (14, β)], fromList [(1, a), (16, f (a))]]
+-- Just
+--   [fromList [(1, a)], fromList [(0, a), (1, f (a))],
+--    fromList [(1, a)], fromList [(1, a), (5, f (a))]]
 
 
-main' = putGroom $ Regularity.refute 9 (julianEx !! 0) julianEx
+main' = putGroom $ FOL.Regularity.refute 9 (julianEx !! 0) julianEx
 
 
 -- >>> main'
--- *** Exception: no solution found
--- CallStack (from HasCallStack):
---   error, called at ./Regularity.hs:93:25 in main:Regularity
+-- Nothing

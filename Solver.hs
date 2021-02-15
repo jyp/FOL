@@ -8,9 +8,11 @@ import FOL.Unification
 prepare :: Foldable t => t Value -> [Clause]
 prepare  = toCNF . doQuote . foldr1 VAnd
 
+solveCNF :: Int -> [Clause] -> Maybe [Substitution]
+solveCNF maxSteps xs = refute maxSteps (xs !! 0) xs
+
 solver :: Foldable t => Int -> t Value -> Maybe [Substitution]
-solver maxSteps input = refute maxSteps (xs !! 0) xs
-  where xs = toCNF $ doQuote $ foldr1 VAnd input
+solver maxSteps = solveCNF maxSteps . prepare
 
 contradicts :: Int -> [Value] -> Value -> Maybe [Substitution]
 contradicts d gamma phi = solver d (phi:gamma)

@@ -6,7 +6,7 @@ module FOL.CNF where
 import FOL.FOL
 
 import Data.Char
-import Control.Arrow (first, second)
+import Control.Arrow (second)
 import Control.Monad.State
 
 ------------------------------------------------------------------------------------
@@ -102,8 +102,6 @@ mkLit (Not x) = error "Inner 'Not' is unsupported in mkLit; negation normal form
 mkLit x = error ("mkLit: not supported: " ++ show x)
 
 ----------------------------------------------------------------------------------------
-{-
--}
 
 type SimpleTerm = (Bool, Literal)
 
