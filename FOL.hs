@@ -1,3 +1,4 @@
+{-# LANGUAGE EmptyDataDecls #-}
 {-# LANGUAGE EmptyCase #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE DeriveTraversable #-}
@@ -5,7 +6,7 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE FlexibleInstances #-}
-module FOL where
+module FOL.FOL where
 
 import Text.PrettyPrint.HughesPJ hiding ((<>))
 

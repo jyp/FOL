@@ -1,10 +1,10 @@
-module Connection where
+module FOL.Connection where
 
-import Tableau
-import Search
 import Control.Applicative
-import CNF
-import Unification
+import FOL.Tableau
+import FOL.Search
+import FOL.CNF
+import FOL.Unification
 
 -- This is a prolog-style search. We keep a list of "goals" to fulfill (this is the 1st branch)
 -- Example:

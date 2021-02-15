@@ -1,7 +1,7 @@
-module Search where
+module FOL.Search where
+
 import Control.Monad
 import Control.Applicative
-import Data.Maybe
 
 -- Search up to a certain depth, given by the argument.
 newtype Search a = Search {runSearch :: Int -> [a]}

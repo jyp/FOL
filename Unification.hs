@@ -1,8 +1,8 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeSynonymInstances #-}
-module Unification where
+module FOL.Unification where
 
-import CNF
+import FOL.CNF
 import qualified Data.Map as M
 import Data.Map (Map)
 import Control.Arrow (second)

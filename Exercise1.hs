@@ -1,13 +1,13 @@
-module Exercise1 where
+module FOL.Exercise1 where
 
-import Tableau
-import CNF
-import Unification
-import Text.Groom
-import FOL
-import Regularity
-import Connection
-import Solver
+import FOL.Tableau
+import FOL.CNF
+import FOL.Unification
+import FOL.Text.Groom
+import FOL.FOL
+import FOL.Regularity
+import FOL.Connection
+import FOL.Solver
 
 (-->) :: Value -> Value -> Value
 p --> q = VNot p ∨ q

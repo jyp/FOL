@@ -1,14 +1,15 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeSynonymInstances #-}
-module Tableau where
+module FOL.Tableau where
 
-import CNF
 import Control.Applicative
+
+import FOL.CNF
 import Data.Tree
-import Unification
+import FOL.Unification
 import Data.Maybe
 import Control.Arrow (second)
-import Search
+import FOL.Search
 
 type Tableau = (Int, [Branch]) -- (freeVars,openBranches)  loss of sharing possible. (we have to refute all the branches)
 type Branch = [SimpleTerm] -- interpreted as a conjunction (which we have to refute)

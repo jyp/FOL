@@ -1,13 +1,13 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeSynonymInstances #-}
-module Regularity where
+module FOL.Regularity where
 
 import Control.Applicative
-import Search
-import Connection (without)
-import Unification
-import CNF
-import Tableau
+import FOL.Search
+import FOL.Connection (without)
+import FOL.Unification
+import FOL.CNF
+import FOL.Tableau
 import qualified Data.Map as M
 import Control.Arrow (first)
 

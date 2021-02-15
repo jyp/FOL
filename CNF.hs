@@ -3,8 +3,9 @@
 
 module FOL.CNF where
 
-import Data.Char
 import FOL.FOL
+
+import Data.Char
 import Control.Arrow (first, second)
 import Control.Monad.State
 
