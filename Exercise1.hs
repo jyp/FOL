@@ -22,11 +22,8 @@ emacsEx = prepare  [p1,p2, VNot  (p1 --> p2)]
           p1 = (VAll $ \x -> VNot (VExi $ \y -> wait(y,x)) ∨ (VExi $ \y -> wait(y, x) ∧ prepared(x)))
           p2 = (VExi $ \x -> command (x) ∧ wait (x,emacs))
 
--- >>> doQuote <$> emacsEx
--- [∀x. ¬(∃y. wait(y,x)) ∨ (∃y. wait(y,x) ∧ prepared(x)),∃x. command(x) ∧ wait(x,emacs),¬(¬(∀x. ¬(∃y. wait(y,x)) ∨ (∃y. wait(y,
---                                      x) ∧ prepared(x))) ∨ (∃x. command(x) ∧ wait(x,emacs)))]
 
--- >>> prettyClauses $ prepare emacsEx
+-- >>> prettyClauses emacsEx
 -- ¬wait(δ,η) ∨ wait(X(η),η)
 -- ¬wait(δ,η) ∨ prepared(η)
 -- command(Y)
@@ -35,46 +32,9 @@ emacsEx = prepare  [p1,p2, VNot  (p1 --> p2)]
 -- ¬wait(β,γ) ∨ prepared(γ)
 -- ¬command(α) ∨ ¬wait(α,emacs)
 
-rotateN :: Int -> [a] -> [a]
-rotateN 0 = id
-rotateN n = rotate . rotateN (n-1)
 
-tt = head $
-     regularConn (c 3) $
-     extendUsingClauseReg (c 0) $
-     (initialTableau,[])
-     where c n = (emacsEx !! n)
-
--- >>> prettyRegTabl tt
--- Goals > wait(X(emacs),emacs)
--- Constraints
---  
--- (0,[[]])
-
--- >>> ttt
-
-ttt :: Maybe [(RegTableau, FOL.Connection.Operation)]
-ttt = solveCNF 10 emacsEx
-
--- >>> prettyTrace (fromJust  ttt)
--- Goals > command(Y)
--- Constraints
--- Connect
---   ¬command(α) ∨ ¬wait(α,emacs) and 
---   command(Y) with 
---   {α ↦ Y,} yielding 
---   ¬wait(Y,emacs)
--- Goals > ¬wait(Y,emacs) ∨ command(Y)
--- Constraints
--- Close
--- Goals > ¬wait(Y,emacs) ∨ command(Y)
--- Constraints
--- Connect wait(Y,emacs) and ¬wait(Y,emacs) with {} yielding ⊥
--- Goals
--- Constraints
--- Close
-
-test = 
+test :: [Clause]
+test = prepare $ 
          VNot (
         good matt
         ) : [ VExi $ \x -> good x,
@@ -83,46 +43,13 @@ test =
     where good x = VApp "good" [x]
           matt =  VApp "matt" []
 
+-- >>> prettyClauses test
+-- ¬good(matt)
+-- good(X)
+-- ¬good(α) ∨ good(α)
 
--- >>> solver 10 test
--- Nothing
-
-
-cls = prepare test
-
--- >>> putGroom (rotate cls)
--- [(0, [(True, good (X))]),
---  (1, [(False, good (α)), (True, good (α))]),
---  (0, [(False, good (matt))])]
-
-t0 = extendUsingClause (head cls) (10,[[]])
-
--- >>> t0
--- (10,[[(False,good(matt))]])
-
-t1 :: [Tableau]
-t1 = map snd $ connection ((cls)) t0
-
--- >>> t1
--- [(11,[[(False,good(matt)),(False,good(matt))]])]
-
-
-t2 :: [Tableau]
-t2 = map snd $ connection (cls) (head t1)
-
--- >>> putGroom t2
--- [(12,
---   [[(False, good (matt)), (False, good (matt)),
---     (False, good (matt))]])]
-
-t3 :: [Tableau]
-t3 = map snd $ connection (cls) (head t2)
-
--- >>> putGroom t3
--- [(13,
---   [[(False, good (matt)), (False, good (matt)), (False, good (matt)),
---     (False, good (matt))]])]
-
+-- >>> isJust $ solveCNF 10 test
+-- False
 
 test' :: [Clause]
 test' = prepare $
@@ -142,7 +69,7 @@ test' = prepare $
           ash =  VApp "ash" []
           matt =  VApp "matt" []
 
--- >>> print $ prettyClauses test'
+-- >>> prettyClauses test'
 -- ¬gin(γ) ∨ ¬drink(γ,ash) ∨ ¬julian(β)
 -- gin(X)
 -- good(X)
@@ -167,9 +94,9 @@ test' = prepare $
 --   > ¬julian(β)
 -- Constraints
 -- Connect
---   ¬good(α) ∨ drink(α,ash) and 
+--   ¬good(δ) ∨ drink(δ,ash) and 
 --   ¬drink(X,ash) with 
---   {α ↦ X,} yielding 
+--   {δ ↦ X,} yielding 
 --   ¬good(X)
 -- Goals
 --   > ¬good(X) ∨ ¬drink(X,ash)
@@ -261,24 +188,24 @@ exercise1 = [ (1,[ ok (g (x,a)) ,ok (g (f x, x))]),
 -- ¬g(δ,γ) ∨ g(f(γ),γ)
 -- ¬g(β,α) ∨ ¬g(α,a)
 
-solution1 :: Tableau
-solution1 =
-    close1 $
-    close1 $
-    rotateBranches $
-    extendUsingClause (c 4) $
-    close1 $
-    close1 $
-    extendUsingClause (c 4) $
-    extendUsingClause (c 1) $
-    close1 $
-    close1 $
-    extendUsingClause (c 4) $
-    close1 $
-    extendUsingClause (c 3) $
-    extendUsingClause (c 0) $
-    initialTableau
-    where c i = exercise1 !! i
+-- solution1 :: Tableau
+-- solution1 =
+--     close1 $
+--     close1 $
+--     rotateBranches $
+--     extendUsingClause (c 4) $
+--     close1 $
+--     close1 $
+--     extendUsingClause (c 4) $
+--     extendUsingClause (c 1) $
+--     close1 $
+--     close1 $
+--     extendUsingClause (c 4) $
+--     close1 $
+--     extendUsingClause (c 3) $
+--     extendUsingClause (c 0) $
+--     initialTableau
+--     where c i = exercise1 !! i
 
 -- >>> solution1
 -- (10,[])
@@ -290,7 +217,7 @@ testSimple :: IO ()
 testSimple = print $ FOL.Tableau.refute 9 exercise1 -- never finds a solution
 
 testConn :: IO ()
-testConn = print $ FOL.Connection.prettyTrace $ fromJust $ FOL.Connection.refute 9 (exercise1 !! 0) exercise1
+testConn = print $ FOL.Connection.prettyTrace $ fromJust $ FOL.Connection.refute 9  exercise1
 
 -- >>> testConn
 -- Goals

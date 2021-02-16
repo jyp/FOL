@@ -4,11 +4,11 @@
 module FOL.Regularity where
  
 import Control.Applicative
-import FOL.Search
-import FOL.Connection (select, Operation(..),prettyOp)
+import FOL.Connection (select', Operation(..),prettyOp,chooseAndAllocateClause)
 import FOL.Unification
 import FOL.CNF
 import FOL.Tableau
+import FOL.Search
 import qualified Data.Map as M
 import Control.Arrow (first)
 import Text.PrettyPrint.HughesPJ hiding ((<>),empty,first)
@@ -44,9 +44,9 @@ instance Substable RegTableau where
   applyS s (t, cs) = (applyS s t, sweepConstraints (applyS s cs))
 
 -- | Extend the 1st branch using given clause.
-extendUsingClauseReg :: Clause -> RegTableau -> RegTableau
-extendUsingClauseReg (clausFreeVars, conjuncts) ((tablFreeVars, (b:branches)), constrs)
-  = ((tablFreeVars + clausFreeVars,
+extendUsingClauseReg :: NakedClause -> RegTableau -> RegTableau
+extendUsingClauseReg clause' ((fvs,b:branches), constrs)
+  = ((fvs,
       [ l:b |  l <- clause'] -- each conjunct in the new clause generates a new goal, together with the rest of the disjuncts of the branch
       ++ branches  -- all the old goals remain
      ),
@@ -60,7 +60,6 @@ extendUsingClauseReg (clausFreeVars, conjuncts) ((tablFreeVars, (b:branches)), c
      -- added to a branch (b), record equations that would yield
      -- variable equality.  If we ever make those equal, backtrack.
     )
-  where clause' = clauseShiftVars tablFreeVars conjuncts
   -- use fresh variables.
 
 -- If B is a branch containing a literal L and C is a clause whose
@@ -77,20 +76,20 @@ extendUsingClauseReg (clausFreeVars, conjuncts) ((tablFreeVars, (b:branches)), c
 -- because of some unifications; these can however be combined to the
 -- substitutions used to close the rest of the tableau.
 
-regularConn :: Clause -> RegTableau -> [RegTableau]
-regularConn cl t = snd <$> regularConnection [cl] t
+-- regularConn :: Clause -> RegTableau -> [RegTableau]
+-- regularConn cl t = snd <$> regularConnection [cl] t
 
 -- Read and understand Connection.hs before looking at this.
-regularConnection :: (Monad m, Alternative m) => [Clause] -> RegTableau -> m (Operation, RegTableau)
-regularConnection cl t@((_fvs, branches), _constrs) = do
+regularConnection :: [Clause] -> RegTableau -> Search (Operation, RegTableau)
+regularConnection cls (t0@(_, branches), constrs) = do
   let ((l0:_) : _) = branches     -- consider the 1st branch
-  c <- choose cl                  -- try the first clause only (rotate takes care of ordering clauses)
-  (l, cRest) <- choose (select c) -- try any literal in the clause
+  (c,t) <- chooseAndAllocateClause cls t0 -- try any clause
+  (l, cRest) <- choose (select' c) -- try any literal in the clause
   unifier <- try $ unifyTop (l0, l)
   -- Unifier succeeds;
   let t' = applyS unifier t
       c' = applyS unifier <$> cRest
-  return (Connection c l0 unifier c', extendUsingClauseReg c' t')
+  return (Connection c l0 unifier c', (extendUsingClauseReg c' (t',constrs)))
 
 
 
@@ -105,14 +104,11 @@ refuteD cls t@((_fvs, branches), constrs)
 
 -- refute depth initialClause clauseSet
 refute :: Int -> [Clause] -> Maybe [(RegTableau,Operation)]
-refute d cs = case runSearch help d of
-                  [] -> Nothing
-                  (x:_) -> Just x
-  where help = do
-          c <- choose cs -- any of the clause may yield a
+refute d cs = runSearchAt d $ do
+          (c,t) <- chooseAndAllocateClause cs initialTableau -- any of the clause may yield a
                          -- contradiction but some will be just
                          -- neutral, so we need to try them all
-          refuteD cs (extendUsingClause c initialTableau, [])
+          refuteD cs (extendUsingClause c t, [])
 
 
 prettyRegTabl :: RegTableau -> Doc

@@ -151,12 +151,12 @@ showCNF = cnfToTerm
 -- quantify t = q1 (Left <$> t)
 
 cnfToTerm :: [Clause] -> Term Int
-cnfToTerm = foldr1 And . map clauseToTerm
+cnfToTerm = foldr1 And . map (clauseToTerm . snd)
 
 
-clauseToTerm :: (a, [SimpleTerm]) -> Term Int
-clauseToTerm (_vs, []) = Fal
-clauseToTerm (_vs, t) = (foldr1 Or . map simpToTerm $ t)
+clauseToTerm :: [SimpleTerm] -> Term Int
+clauseToTerm ([]) = Fal
+clauseToTerm (t) = (foldr1 Or . map simpToTerm $ t)
 
 simpToTerm :: (Bool, Literal) -> Term Int
 simpToTerm (b, t) = (if not b then Not else id) (litToTerm t)
@@ -170,9 +170,9 @@ prettySimpleTerm :: SimpleTerm -> Doc
 -- prettySimpleTerm = text . show
 prettySimpleTerm = prettyTerm . simpToTerm
 
-prettyClause :: Clause -> Doc
+prettyClause :: NakedClause -> Doc
 -- prettyClause = text . show
 prettyClause = prettyTerm . clauseToTerm
 
 prettyClauses :: [Clause] -> Doc
-prettyClauses = vcat . map prettyClause
+prettyClauses = vcat . map (prettyClause . snd)

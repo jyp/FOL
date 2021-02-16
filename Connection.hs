@@ -1,3 +1,4 @@
+{-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE TupleSections #-}
 module FOL.Connection where
@@ -25,13 +26,18 @@ import Text.PrettyPrint.HughesPJ hiding ((<>),empty,first)
 -- we have now two goals:
 -- h(z) ∨ g(z) and i(Z) ∨ g(z) 
 
+chooseAndAllocateClause :: [Clause] -> Tableau -> Search (NakedClause,Tableau)
+chooseAndAllocateClause cls (fvs,branches) = do
+  (cFvs,c) <- choose cls
+  return (clauseShiftVars fvs c,(fvs+cFvs,branches))
+  
+
 -- | Try to close the 1st term of the 1st branch in the tableau.
-connection :: (Monad m, Alternative m)
-           => [Clause] -> Tableau -> m (Operation,Tableau)
-connection cl t@(_fvs, branches) = do 
+connection :: [Clause] -> Tableau -> Search (Operation,Tableau)
+connection cls t0@(_fvs, branches) = do 
   let ((l0:_) : _otherBranches) = branches      -- first literal of the first branch
-  c <- choose cl                  -- try any clause
-  (l, cRest) <- choose (select c) -- try any literal in the clause
+  (c,t) <- chooseAndAllocateClause cls t0                  -- try any clause
+  (l, cRest) <- choose (select' c) -- try any literal in the clause
   unifier <- try $ unifyTop (l0, l)   -- try to unify l0 and l
   let t' = applyS unifier t
       c' = applyS unifier <$> cRest
@@ -58,15 +64,14 @@ refuteD cls t
 -- Question : Do we have to apply the normal closure rule (now called reduction) for completeness?
 
 -- refute depth initialClause clauseSet
-refute :: Int -> Clause -> [Clause] -> Maybe [(Tableau,Operation)]
-refute d c cs = case runSearch (refuteD
-                                cs
-                                t0) d of
-                  [] -> Nothing
-                  (x:_) -> Just x
-    where t0 = extendUsingClause c initialTableau
+refute :: Int -> [Clause] -> Maybe [(Tableau,Operation)]
+refute d cs = runSearchAt d $ do
+  (c,t) <- chooseAndAllocateClause cs initialTableau -- any of the clause may yield a contradiction but
+                 -- some will be just neutral, so we need to try them
+                 -- all
+  refuteD cs (extendUsingClause c t)
 
-data Operation = Connection Clause SimpleTerm Substitution Clause | Close
+data Operation = Connection NakedClause SimpleTerm Substitution NakedClause | Close
 
 prettyOp :: Operation -> Doc
 prettyOp = \case

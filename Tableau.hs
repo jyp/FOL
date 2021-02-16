@@ -65,12 +65,9 @@ instance Substable Tableau where
 -- The clause is split into literals l_i. We add each of the l_i to the branch,
 -- creating a new branch for each.
 -- (If we're able to refute every case of the disjuction then we'd be done).
-extendUsingClause :: Clause -> Tableau -> Tableau
-extendUsingClause (clausFreeVars, conjuncts) (tablFreeVars,(b:branches))
-  = (tablFreeVars + clausFreeVars, [ l:b |
-                                     l <- clauseShiftVars tablFreeVars conjuncts
-                                     -- use fresh variables.
-                                         ] ++ branches)
+extendUsingClause :: NakedClause -> Tableau -> Tableau
+extendUsingClause conjuncts (fvs,(b:branches))
+  = (fvs,[ l:b | l <- conjuncts] ++ branches)
 
 ---------------------------------------------
 -- Depth-bounded search with backtracking
@@ -81,21 +78,24 @@ extendUsingClause (clausFreeVars, conjuncts) (tablFreeVars,(b:branches))
 -- Pick one of the clauses, add it to the branch.
 -- Stop when there is a contradiction.
 
+
+
 refuteSimpleD :: [Clause] -> Tableau -> Search [Substitution]
-refuteSimpleD cs@(c:cs') t
+refuteSimpleD cs@((clsFvs,c0):cs') t@(tblFvs,bs)
    | finished t = return []
    | otherwise
-   =   do deeper $ refuteSimpleD cs' -- keep going using the rest of the clauses
-                   (extendUsingClause c t) -- try the 1st clause
+   =   do let c = clauseShiftVars tblFvs c0
+          deeper $ refuteSimpleD cs' -- keep going using the rest of the clauses
+                   (extendUsingClause c (tblFvs+clsFvs,bs)) -- try the 1st clause
+          
   <|>  do mgu <- choose (possibleMGUs t) -- see if we can close any branch
           (mgu:) <$> refuteSimpleD cs (filterClosed $ applyS mgu t) -- go ahead
 
 
 refute :: Int -> [Clause] -> Maybe [Substitution]
-refute d cs = listToMaybe $
-                    runSearch (refuteSimpleD
+refute d cs = runSearchAt d $ (refuteSimpleD
                                (cycle cs) -- infinite supply of facts (try those in round-robin)
-                                initialTableau) d
+                                initialTableau)
 
 -------------------------------------
 --  "Incomplete" utilities.
