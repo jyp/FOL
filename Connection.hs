@@ -26,6 +26,10 @@ import Text.PrettyPrint.HughesPJ hiding ((<>),empty,first)
 -- we have now two goals:
 -- h(z) ∨ g(z) and i(Z) ∨ g(z) 
 
+
+-- | Choose a clause, and allocate new variables for it so they don't
+-- clash with those in the tableau. The returned tableau takes this
+-- into account, having more free variables.
 chooseAndAllocateClause :: [Clause] -> Tableau -> Search (NakedClause,Tableau)
 chooseAndAllocateClause cls (fvs,branches) = do
   (cFvs,c) <- choose cls
@@ -35,7 +39,7 @@ chooseAndAllocateClause cls (fvs,branches) = do
 -- | Try to close the 1st term of the 1st branch in the tableau.
 connection :: [Clause] -> Tableau -> Search (Operation,Tableau)
 connection cls t0@(_fvs, branches) = do 
-  let ((l0:_) : _otherBranches) = branches      -- first literal of the first branch
+  let ((l0:_) : _otherBranches) = branches      -- first literal of the first branch (we do other branches later)
   (c,t) <- chooseAndAllocateClause cls t0                  -- try any clause
   (l, cRest) <- choose (select' c) -- try any literal in the clause
   unifier <- try $ unifyTop (l0, l)   -- try to unify l0 and l

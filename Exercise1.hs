@@ -141,12 +141,6 @@ exx = VNot ((VExi $ \x -> gin (x) ∨ good x) `VAnd`
 --           ash =  VApp "ash" []
 
 
--- >>> putGroom julianEx
--- [(0, [(False, gin (X))]),
---  (1, [(False, good (α)), (True, drink (α, ash))]),
---  (0, [(True, gin (Y)), (True, good (Y))])]
-
-
 exercise1' = toCNF $ doQuote $ foldr1 VAnd 
                [ VAll $ \x -> g (x,a) ∨ g (f x, x),
                  VAll $ \x -> g (x,a) ∨ g (x, f x),
@@ -181,12 +175,12 @@ exercise1 = [ (1,[ ok (g (x,a)) ,ok (g (f x, x))]),
           ok x = (True, x)
           nk x = (False, x)
 
--- >>> prettyClauses exercise1'
--- g(κ,a) ∨ g(f(κ),κ)
--- g(ι,a) ∨ g(ι,f(ι))
--- ¬g(ε,η) ∨ g(η,f(η))
--- ¬g(δ,γ) ∨ g(f(γ),γ)
--- ¬g(β,α) ∨ ¬g(α,a)
+-- >>> prettyClauses exercise1
+-- g(α,a) ∨ g(f(α),α)
+-- g(α,a) ∨ g(α,f(α))
+-- ¬g(α,β) ∨ g(β,f(β))
+-- ¬g(α,β) ∨ g(f(β),β)
+-- ¬g(α,β) ∨ ¬g(β,a)
 
 -- solution1 :: Tableau
 -- solution1 =
@@ -224,106 +218,102 @@ testConn = print $ FOL.Connection.prettyTrace $ fromJust $ FOL.Connection.refute
 --   > g(α,a)
 --   > g(f(α),α)
 -- Connect
---   ¬g(α,β) ∨ g(β,f(β)) and g(α,a) with {β ↦ a,} yielding g(a,f(a))
+--   ¬g(β,γ) ∨ g(γ,f(γ)) and 
+--   g(α,a) with 
+--   {α ↦ β,γ ↦ a,} yielding 
+--   g(a,f(a))
 -- Goals
---   > g(a,f(a)) ∨ g(α,a)
---   > g(f(α),α)
+--   > g(a,f(a)) ∨ g(β,a)
+--   > g(f(β),β)
 -- Close
 -- Goals
---   > g(a,f(a)) ∨ g(α,a)
---   > g(f(α),α)
+--   > g(a,f(a)) ∨ g(β,a)
+--   > g(f(β),β)
 -- Connect
---   ¬g(α,β) ∨ g(f(β),β) and 
+--   ¬g(δ,η) ∨ g(f(η),η) and 
 --   g(a,f(a)) with 
---   {α ↦ a,β ↦ f(a),} yielding 
+--   {δ ↦ a,η ↦ f(a),} yielding 
 --   g(f(f(a)),f(a))
 -- Goals
---   > g(f(f(a)),f(a)) ∨ g(a,f(a)) ∨ g(a,a)
---   > g(f(a),a)
+--   > g(f(f(a)),f(a)) ∨ g(a,f(a)) ∨ g(β,a)
+--   > g(f(β),β)
 -- Close
 -- Goals
---   > g(f(f(a)),f(a)) ∨ g(a,f(a)) ∨ g(a,a)
---   > g(f(a),a)
+--   > g(f(f(a)),f(a)) ∨ g(a,f(a)) ∨ g(β,a)
+--   > g(f(β),β)
 -- Connect
---   ¬g(α,β) ∨ g(f(β),β) and 
+--   ¬g(ε,ι) ∨ g(f(ι),ι) and 
 --   g(f(f(a)),f(a)) with 
---   {α ↦ f(f(a)),β ↦ f(a),} yielding 
+--   {ε ↦ f(f(a)),ι ↦ f(a),} yielding 
 --   g(f(f(a)),f(a))
 -- Goals
---   > g(f(f(a)),f(a)) ∨ g(f(f(a)),f(a)) ∨ g(a,f(a)) ∨ g(a,a)
---   > g(f(a),a)
+--   > g(f(f(a)),f(a)) ∨ g(f(f(a)),f(a)) ∨ g(a,f(a)) ∨ g(β,a)
+--   > g(f(β),β)
 -- Close
 -- Goals
---   > g(f(f(a)),f(a)) ∨ g(f(f(a)),f(a)) ∨ g(a,f(a)) ∨ g(a,a)
---   > g(f(a),a)
+--   > g(f(f(a)),f(a)) ∨ g(f(f(a)),f(a)) ∨ g(a,f(a)) ∨ g(β,a)
+--   > g(f(β),β)
 -- Connect
---   ¬g(α,β) ∨ g(f(β),β) and 
+--   ¬g(κ,λ) ∨ ¬g(λ,a) and 
 --   g(f(f(a)),f(a)) with 
---   {α ↦ f(f(a)),β ↦ f(a),} yielding 
---   g(f(f(a)),f(a))
--- Goals
---   > g(f(f(a)),f(a)) ∨ g(f(f(a)),f(a)) ∨ g(f(f(a)),f(a)) ∨ g(a,
---                                                             f(a)) ∨ g(a,a)
---   > g(f(a),a)
--- Close
--- Goals
---   > g(f(f(a)),f(a)) ∨ g(f(f(a)),f(a)) ∨ g(f(f(a)),f(a)) ∨ g(a,
---                                                             f(a)) ∨ g(a,a)
---   > g(f(a),a)
--- Connect
---   ¬g(α,β) ∨ ¬g(β,a) and 
---   g(f(f(a)),f(a)) with 
---   {α ↦ f(f(a)),β ↦ f(a),} yielding 
+--   {κ ↦ f(f(a)),λ ↦ f(a),} yielding 
 --   ¬g(f(a),a)
 -- Goals
---   > ¬g(f(a),a) ∨ g(f(f(a)),f(a)) ∨ g(f(f(a)),f(a)) ∨ g(f(f(a)),
---                                                        f(a)) ∨ g(a,f(a)) ∨ g(a,a)
---   > g(f(a),a)
+--   > ¬g(f(a),a) ∨ g(f(f(a)),f(a)) ∨ g(f(f(a)),f(a)) ∨ g(a,f(a)) ∨ g(β,
+--                                                                    a)
+--   > g(f(β),β)
 -- Close
 -- Goals
---   > ¬g(f(a),a) ∨ g(f(f(a)),f(a)) ∨ g(f(f(a)),f(a)) ∨ g(f(f(a)),
---                                                        f(a)) ∨ g(a,f(a)) ∨ g(a,a)
---   > g(f(a),a)
+--   > ¬g(f(a),a) ∨ g(f(f(a)),f(a)) ∨ g(f(f(a)),f(a)) ∨ g(a,f(a)) ∨ g(β,
+--                                                                    a)
+--   > g(f(β),β)
 -- Connect
---   g(α,a) ∨ g(f(α),α) and ¬g(f(a),a) with {α ↦ a,} yielding g(a,a)
+--   g(μ,a) ∨ g(f(μ),μ) and ¬g(f(a),a) with {μ ↦ a,} yielding g(a,a)
 -- Goals
---   > g(a,a) ∨ ¬g(f(a),a) ∨ g(f(f(a)),f(a)) ∨ g(f(f(a)),
---                                               f(a)) ∨ g(f(f(a)),f(a)) ∨ g(a,f(a)) ∨ g(a,a)
---   > g(f(a),a)
+--   > g(a,a) ∨ ¬g(f(a),a) ∨ g(f(f(a)),f(a)) ∨ g(f(f(a)),f(a)) ∨ g(a,
+--                                                                 f(a)) ∨ g(β,a)
+--   > g(f(β),β)
 -- Close
 -- Goals
---   > g(a,a) ∨ ¬g(f(a),a) ∨ g(f(f(a)),f(a)) ∨ g(f(f(a)),
---                                               f(a)) ∨ g(f(f(a)),f(a)) ∨ g(a,f(a)) ∨ g(a,a)
---   > g(f(a),a)
+--   > g(a,a) ∨ ¬g(f(a),a) ∨ g(f(f(a)),f(a)) ∨ g(f(f(a)),f(a)) ∨ g(a,
+--                                                                 f(a)) ∨ g(β,a)
+--   > g(f(β),β)
 -- Connect
---   ¬g(α,β) ∨ g(f(β),β) and 
+--   ¬g(ν,π) ∨ g(f(π),π) and 
 --   g(a,a) with 
---   {α ↦ a,β ↦ a,} yielding 
+--   {ν ↦ a,π ↦ a,} yielding 
 --   g(f(a),a)
 -- Goals
 --   > g(f(a),a) ∨ g(a,a) ∨ ¬g(f(a),a) ∨ g(f(f(a)),f(a)) ∨ g(f(f(a)),
---                                                           f(a)) ∨ g(f(f(a)),f(a)) ∨ g(a,f(a)) ∨ g(a,
---                                                                                                   a)
---   > g(f(a),a)
+--                                                           f(a)) ∨ g(a,f(a)) ∨ g(β,a)
+--   > g(f(β),β)
 -- Close
--- Goals > g(f(a),a)
+-- Goals > g(f(β),β)
 -- Connect
---   ¬g(α,β) ∨ g(β,f(β)) and 
---   g(f(a),a) with 
---   {α ↦ f(a),β ↦ a,} yielding 
---   g(a,f(a))
--- Goals > g(a,f(a)) ∨ g(f(a),a)
+--   ¬g(ρ,σ) ∨ g(σ,f(σ)) and 
+--   g(f(β),β) with 
+--   {β ↦ σ,ρ ↦ f(σ),} yielding 
+--   g(σ,f(σ))
+-- Goals > g(σ,f(σ)) ∨ g(f(σ),σ)
 -- Close
--- Goals > g(a,f(a)) ∨ g(f(a),a)
+-- Goals > g(σ,f(σ)) ∨ g(f(σ),σ)
 -- Connect
---   ¬g(α,β) ∨ ¬g(β,a) and 
---   g(a,f(a)) with 
---   {α ↦ a,β ↦ f(a),} yielding 
---   ¬g(f(a),a)
--- Goals > ¬g(f(a),a) ∨ g(a,f(a)) ∨ g(f(a),a)
+--   ¬g(φ,ψ) ∨ ¬g(ψ,a) and 
+--   g(σ,f(σ)) with 
+--   {σ ↦ φ,ψ ↦ f(φ),} yielding 
+--   ¬g(f(φ),a)
+-- Goals > ¬g(f(φ),a) ∨ g(φ,f(φ)) ∨ g(f(φ),φ)
+-- Close
+-- Goals > ¬g(f(φ),a) ∨ g(φ,f(φ)) ∨ g(f(φ),φ)
+-- Connect
+--   ¬g(ξ,ζ) ∨ g(f(ζ),ζ) and 
+--   ¬g(f(φ),a) with 
+--   {φ ↦ a,ζ ↦ a,} yielding 
+--   ¬g(ξ,a)
+-- Goals > ¬g(ξ,a) ∨ ¬g(f(a),a) ∨ g(a,f(a)) ∨ g(f(a),a)
 -- Close
 
--- main =  print $ prettyTrace $ fromJust $ FOL.Regularity.refute 9 (exercise1 !! 0) exercise1
+main =  print $ prettyTrace $ fromJust $ FOL.Regularity.refute 9 exercise1
 
 -- >>> main
 -- Goals
@@ -331,114 +321,139 @@ testConn = print $ FOL.Connection.prettyTrace $ fromJust $ FOL.Connection.refute
 --   > g(f(α),α)
 -- Constraints
 -- Connect
---   ¬g(α,β) ∨ g(β,f(β)) and g(α,a) with {β ↦ a,} yielding g(a,f(a))
+--   ¬g(β,γ) ∨ g(γ,f(γ)) and 
+--   g(α,a) with 
+--   {α ↦ β,γ ↦ a,} yielding 
+--   g(a,f(a))
 -- Goals
---   > g(a,f(a)) ∨ g(α,a)
---   > g(f(α),α)
+--   > g(a,f(a)) ∨ g(β,a)
+--   > g(f(β),β)
 -- Constraints
 -- Close
 -- Goals
---   > g(a,f(a)) ∨ g(α,a)
---   > g(f(α),α)
+--   > g(a,f(a)) ∨ g(β,a)
+--   > g(f(β),β)
 -- Constraints
 -- Connect
---   ¬g(α,β) ∨ g(f(β),β) and 
+--   ¬g(δ,η) ∨ g(f(η),η) and 
 --   g(a,f(a)) with 
---   {α ↦ a,β ↦ f(a),} yielding 
+--   {δ ↦ a,η ↦ f(a),} yielding 
 --   g(f(f(a)),f(a))
 -- Goals
---   > g(f(f(a)),f(a)) ∨ g(a,f(a)) ∨ g(a,a)
---   > g(f(a),a)
+--   > g(f(f(a)),f(a)) ∨ g(a,f(a)) ∨ g(β,a)
+--   > g(f(β),β)
 -- Constraints
 -- Close
 -- Goals
---   > g(f(f(a)),f(a)) ∨ g(a,f(a)) ∨ g(a,a)
---   > g(f(a),a)
+--   > g(f(f(a)),f(a)) ∨ g(a,f(a)) ∨ g(β,a)
+--   > g(f(β),β)
 -- Constraints
 -- Connect
---   ¬g(α,β) ∨ ¬g(β,a) and 
+--   ¬g(ε,ι) ∨ ¬g(ι,a) and 
 --   g(f(f(a)),f(a)) with 
---   {α ↦ f(f(a)),β ↦ f(a),} yielding 
+--   {ε ↦ f(f(a)),ι ↦ f(a),} yielding 
 --   ¬g(f(a),a)
 -- Goals
---   > ¬g(f(a),a) ∨ g(f(f(a)),f(a)) ∨ g(a,f(a)) ∨ g(a,a)
---   > g(f(a),a)
+--   > ¬g(f(a),a) ∨ g(f(f(a)),f(a)) ∨ g(a,f(a)) ∨ g(β,a)
+--   > g(f(β),β)
 -- Constraints
 -- Close
 -- Goals
---   > ¬g(f(a),a) ∨ g(f(f(a)),f(a)) ∨ g(a,f(a)) ∨ g(a,a)
---   > g(f(a),a)
+--   > ¬g(f(a),a) ∨ g(f(f(a)),f(a)) ∨ g(a,f(a)) ∨ g(β,a)
+--   > g(f(β),β)
 -- Constraints
 -- Connect
---   ¬g(α,β) ∨ g(f(β),β) and ¬g(f(a),a) with {β ↦ a,} yielding ¬g(α,a)
+--   ¬g(κ,λ) ∨ g(f(λ),λ) and ¬g(f(a),a) with {λ ↦ a,} yielding ¬g(κ,a)
 -- Goals
---   > ¬g(κ,a) ∨ ¬g(f(a),a) ∨ g(f(f(a)),f(a)) ∨ g(a,f(a)) ∨ g(a,a)
---   > g(f(a),a)
+--   > ¬g(κ,a) ∨ ¬g(f(a),a) ∨ g(f(f(a)),f(a)) ∨ g(a,f(a)) ∨ g(β,a)
+--   > g(f(β),β)
 -- Constraints {κ ↦ f(a),}
 -- Close
 -- Goals
---   > ¬g(κ,a) ∨ ¬g(f(a),a) ∨ g(f(f(a)),f(a)) ∨ g(a,f(a)) ∨ g(a,a)
---   > g(f(a),a)
+--   > ¬g(κ,a) ∨ ¬g(f(a),a) ∨ g(f(f(a)),f(a)) ∨ g(a,f(a)) ∨ g(β,a)
+--   > g(f(β),β)
 -- Constraints {κ ↦ f(a),}
 -- Connect
---   g(α,a) ∨ g(f(α),α) and ¬g(κ,a) with {κ ↦ α,} yielding g(f(α),α)
+--   g(μ,a) ∨ g(f(μ),μ) and ¬g(κ,a) with {κ ↦ μ,} yielding g(f(μ),μ)
 -- Goals
---   > g(f(μ),μ) ∨ ¬g(α,a) ∨ ¬g(f(a),a) ∨ g(f(f(a)),f(a)) ∨ g(a,
---                                                            f(a)) ∨ g(a,a)
---   > g(f(a),a)
+--   > g(f(μ),μ) ∨ ¬g(μ,a) ∨ ¬g(f(a),a) ∨ g(f(f(a)),f(a)) ∨ g(a,
+--                                                            f(a)) ∨ g(β,a)
+--   > g(f(β),β)
 -- Constraints
 --   {μ ↦ f(a),}
---   {α ↦ f(a),}
+--   {β ↦ f(a),μ ↦ a,}
+--   {κ ↦ f(a),}
 -- Close
 -- Goals
---   > g(f(μ),μ) ∨ ¬g(α,a) ∨ ¬g(f(a),a) ∨ g(f(f(a)),f(a)) ∨ g(a,
---                                                            f(a)) ∨ g(a,a)
---   > g(f(a),a)
+--   > g(f(μ),μ) ∨ ¬g(μ,a) ∨ ¬g(f(a),a) ∨ g(f(f(a)),f(a)) ∨ g(a,
+--                                                            f(a)) ∨ g(β,a)
+--   > g(f(β),β)
 -- Constraints
 --   {μ ↦ f(a),}
---   {α ↦ f(a),}
+--   {β ↦ f(a),μ ↦ a,}
+--   {κ ↦ f(a),}
 -- Connect
---   ¬g(α,β) ∨ ¬g(β,a) and 
+--   ¬g(ν,π) ∨ ¬g(π,a) and 
 --   g(f(μ),μ) with 
---   {β ↦ f(a),μ ↦ a,} yielding 
---   ¬g(α,f(a))
+--   {μ ↦ a,π ↦ f(a),} yielding 
+--   ¬g(ν,f(a))
 -- Goals
---   > ¬g(ν,f(a)) ∨ g(f(a),a) ∨ ¬g(α,a) ∨ ¬g(f(a),a) ∨ g(f(f(a)),
---                                                       f(a)) ∨ g(a,f(a)) ∨ g(a,a)
---   > g(f(a),a)
--- Constraints {α ↦ f(a),}
+--   > ¬g(ν,f(a)) ∨ g(f(a),a) ∨ ¬g(a,a) ∨ ¬g(f(a),a) ∨ g(f(f(a)),
+--                                                       f(a)) ∨ g(a,f(a)) ∨ g(β,a)
+--   > g(f(β),β)
+-- Constraints
+--   {μ ↦ f(a),}
+--   {β ↦ f(a),μ ↦ a,}
+--   {κ ↦ f(a),}
 -- Close
--- Goals > g(f(a),a)
--- Constraints {α ↦ f(a),}
+-- Goals > g(f(β),β)
+-- Constraints
+--   {μ ↦ f(a),}
+--   {β ↦ f(a),μ ↦ a,}
+--   {κ ↦ f(a),}
 -- Connect
---   ¬g(α,β) ∨ ¬g(β,a) and 
---   g(f(a),a) with 
---   {β ↦ f(a),} yielding 
---   ¬g(α,f(a))
--- Goals > ¬g(ρ,f(a)) ∨ g(f(a),a)
--- Constraints {α ↦ f(a),}
+--   ¬g(ρ,σ) ∨ g(σ,f(σ)) and 
+--   g(f(β),β) with 
+--   {β ↦ σ,ρ ↦ f(σ),} yielding 
+--   g(σ,f(σ))
+-- Goals > g(σ,f(σ)) ∨ g(f(σ),σ)
+-- Constraints
+--   {μ ↦ f(a),}
+--   {β ↦ f(a),μ ↦ a,}
+--   {κ ↦ f(a),}
 -- Close
--- Goals > ¬g(ρ,f(a)) ∨ g(f(a),a)
--- Constraints {α ↦ f(a),}
+-- Goals > g(σ,f(σ)) ∨ g(f(σ),σ)
+-- Constraints
+--   {μ ↦ f(a),}
+--   {β ↦ f(a),μ ↦ a,}
+--   {κ ↦ f(a),}
 -- Connect
---   ¬g(α,β) ∨ g(β,f(β)) and 
---   ¬g(ρ,f(a)) with 
---   {β ↦ a,ρ ↦ a,} yielding 
---   ¬g(α,a)
--- Goals > ¬g(φ,a) ∨ ¬g(a,f(a)) ∨ g(f(a),a)
--- Constraints {α ↦ f(a),}
+--   ¬g(φ,ψ) ∨ ¬g(ψ,a) and 
+--   g(σ,f(σ)) with 
+--   {σ ↦ φ,ψ ↦ f(φ),} yielding 
+--   ¬g(f(φ),a)
+-- Goals > ¬g(f(φ),a) ∨ g(φ,f(φ)) ∨ g(f(φ),φ)
+-- Constraints
+--   {μ ↦ f(a),}
+--   {β ↦ f(a),μ ↦ a,}
+--   {κ ↦ f(a),}
 -- Close
--- Goals > ¬g(φ,a) ∨ ¬g(a,f(a)) ∨ g(f(a),a)
--- Constraints {α ↦ f(a),}
+-- Goals > ¬g(f(φ),a) ∨ g(φ,f(φ)) ∨ g(f(φ),φ)
+-- Constraints
+--   {μ ↦ f(a),}
+--   {β ↦ f(a),μ ↦ a,}
+--   {κ ↦ f(a),}
 -- Connect
---   ¬g(α,β) ∨ g(f(β),β) and 
---   ¬g(φ,a) with 
---   {β ↦ a,φ ↦ f(a),} yielding 
---   ¬g(α,a)
--- Goals > ¬g(ξ,a) ∨ ¬g(f(a),a) ∨ ¬g(a,f(a)) ∨ g(f(a),a)
+--   ¬g(ξ,ζ) ∨ g(f(ζ),ζ) and 
+--   ¬g(f(φ),a) with 
+--   {φ ↦ a,ζ ↦ a,} yielding 
+--   ¬g(ξ,a)
+-- Goals > ¬g(ξ,a) ∨ ¬g(f(a),a) ∨ g(a,f(a)) ∨ g(f(a),a)
 -- Constraints
 --   {ξ ↦ f(a),}
---   {α ↦ f(a),}
+--   {μ ↦ f(a),}
+--   {β ↦ f(a),μ ↦ a,}
+--   {κ ↦ f(a),}
 -- Close
 
 

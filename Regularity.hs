@@ -76,20 +76,18 @@ extendUsingClauseReg clause' ((fvs,b:branches), constrs)
 -- because of some unifications; these can however be combined to the
 -- substitutions used to close the rest of the tableau.
 
--- regularConn :: Clause -> RegTableau -> [RegTableau]
--- regularConn cl t = snd <$> regularConnection [cl] t
-
 -- Read and understand Connection.hs before looking at this.
 regularConnection :: [Clause] -> RegTableau -> Search (Operation, RegTableau)
 regularConnection cls (t0@(_, branches), constrs) = do
-  let ((l0:_) : _) = branches     -- consider the 1st branch
+  let ((l0:_) : _) = branches     -- Try to refute the 1st literal of the 1st branch.
   (c,t) <- chooseAndAllocateClause cls t0 -- try any clause
   (l, cRest) <- choose (select' c) -- try any literal in the clause
   unifier <- try $ unifyTop (l0, l)
   -- Unifier succeeds;
   let t' = applyS unifier t
       c' = applyS unifier <$> cRest
-  return (Connection c l0 unifier c', (extendUsingClauseReg c' (t',constrs)))
+  return (Connection c l0 unifier c',
+          (extendUsingClauseReg c' (t',constrs)))
 
 
 
