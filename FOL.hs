@@ -12,6 +12,7 @@ import Text.PrettyPrint.HughesPJ hiding ((<>))
 
 import Numeric
 import Control.Monad (ap)
+import Data.Function (on)
 
 -- Nested abstract syntax
 data Term a
@@ -24,7 +25,7 @@ data Term a
   | Or  (Term a) (Term a)
   | Tru 
   | Fal
-  deriving (Functor, Traversable, Foldable)
+  deriving (Functor, Traversable, Foldable, Eq)
 
 instance Applicative Term where
   pure = Var
@@ -65,6 +66,9 @@ data Value
   | VOr  Value Value
   | VTru
   | VFal
+
+instance Eq Value where
+  (==) = (==) `on` doQuote
 
 (⟶) :: Value -> Value -> Value
 x ⟶ y = VNot x `VOr` y
